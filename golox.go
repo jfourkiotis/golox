@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"golox/scanner"
 	"io/ioutil"
 	"os"
 )
@@ -37,7 +38,11 @@ func runPrompt() {
 }
 
 func run(src string) {
-	fmt.Println(src)
+	scanner := scanner.New(src)
+	tokens := scanner.ScanTokens()
+	for _, tok := range tokens {
+		fmt.Println(tok)
+	}
 }
 
 func main() {
