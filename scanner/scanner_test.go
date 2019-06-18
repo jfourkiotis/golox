@@ -14,9 +14,9 @@ func TestScanTokens(t *testing.T) {
 		{token.LEFTPAREN, "("},
 	}
 
-	scanner := New(input)
+	sc := New(input)
 	for i, test := range tests {
-		tokens := scanner.ScanTokens()
+		tokens := sc.ScanTokens()
 		if len(tokens) != 2 {
 			t.Fatalf("tests[%d] - number of tokens is wrong. expected=%q, got=%q", i, len(tokens), 2)
 		}
