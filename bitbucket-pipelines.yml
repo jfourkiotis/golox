@@ -15,4 +15,4 @@ pipelines:
           - cd "${PACKAGE_PATH}"
           - go get -v
           - go build -v
-          - go test -v
+          - go test -v golox...
