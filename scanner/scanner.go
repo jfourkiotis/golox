@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"fmt"
 	"golox/parseerror"
 	"golox/token"
 )
@@ -38,8 +39,34 @@ func (sc *Scanner) makeToken(tp token.Type) token.Token {
 }
 
 func (sc *Scanner) addToken(tp token.Type) {
+	sc.addTokenWithLiteral(tp, nil)
+}
+
+func (sc *Scanner) addTokenWithLiteral(tp token.Type, literal interface{}) {
 	text := sc.source[sc.start:sc.current]
-	sc.tokens = append(sc.tokens, token.Token{Type: tp, Lexeme: text, Literal: nil, Line: sc.line})
+	sc.tokens = append(sc.tokens, token.Token{Type: tp, Lexeme: text, Literal: literal, Line: sc.line})
+}
+
+func (sc *Scanner) scanString() {
+	for sc.peek() != '"' && !sc.isAtEnd() {
+		if sc.peek() == '\n' {
+			sc.line++
+		}
+		sc.advance()
+	}
+
+	// unterminated string
+	if sc.isAtEnd() {
+		parseerror.Error(sc.line, "Unterminated string.")
+		return
+	}
+
+	// the closing ".
+	sc.advance()
+
+	// trim the surrounding quotes
+	value := sc.source[sc.start+1 : sc.current-1]
+	sc.addTokenWithLiteral(token.STRING, value)
 }
 
 func (sc *Scanner) scanToken() {
@@ -103,8 +130,10 @@ func (sc *Scanner) scanToken() {
 		sc.line++
 	case ' ', '\r', '\t':
 		// do nothing
+	case '"':
+		sc.scanString()
 	default:
-		parseerror.Error(sc.line, "Unexpected character.")
+		parseerror.Error(sc.line, fmt.Sprintf("Unexpected character: %c", c))
 	}
 }
 

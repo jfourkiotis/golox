@@ -7,7 +7,8 @@ import (
 
 func TestScanTokens(t *testing.T) {
 	input := `( ){     }, .-      +; * =	!=><<=>===!/
-				// a comment    
+				// a comment
+			"some string"    
 		=
 	`
 	tests := []struct {
@@ -33,6 +34,7 @@ func TestScanTokens(t *testing.T) {
 		{token.EQUALEQUAL, "=="},
 		{token.BANG, "!"},
 		{token.SLASH, "/"},
+		{token.STRING, "\"some string\""},
 		{token.EQUAL, "="},
 	}
 
@@ -55,4 +57,5 @@ func TestScanTokens(t *testing.T) {
 	if tokens[len(tokens)-1].Type != token.EOF {
 		t.Fatalf("tests - the last token is not EOF")
 	}
+
 }
