@@ -43,6 +43,33 @@ func (sc *Scanner) scanToken() token.Token {
 	case '(':
 		literal := sc.source[sc.start:sc.current]
 		return token.Token{Type: token.LEFTPAREN, Literal: literal, Line: sc.line}
+	case ')':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.RIGHTPAREN, Literal: literal, Line: sc.line}
+	case '{':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.LEFTBRACE, Literal: literal, Line: sc.line}
+	case '}':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.RIGHTBRACE, Literal: literal, Line: sc.line}
+	case ',':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.COMMA, Literal: literal, Line: sc.line}
+	case '.':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.DOT, Literal: literal, Line: sc.line}
+	case '-':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.MINUS, Literal: literal, Line: sc.line}
+	case '+':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.PLUS, Literal: literal, Line: sc.line}
+	case ';':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.SEMICOLON, Literal: literal, Line: sc.line}
+	case '*':
+		literal := sc.source[sc.start:sc.current]
+		return token.Token{Type: token.STAR, Literal: literal, Line: sc.line}
 	default:
 		parseerror.Error(sc.line, "Parse error")
 		return token.Token{Type: token.INVALID}
