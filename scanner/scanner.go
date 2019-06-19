@@ -61,7 +61,30 @@ func (sc *Scanner) scanToken() token.Token {
 	if ok {
 		return sc.makeToken(tp)
 	}
-	parseerror.Error(sc.line, "Parse error")
+
+	switch c {
+	case '!':
+		if sc.match('=') {
+			return sc.makeToken(token.BANGEQUAL)
+		}
+		return sc.makeToken(token.BANG)
+	case '=':
+		if sc.match('=') {
+			return sc.makeToken(token.EQUALEQUAL)
+		}
+		return sc.makeToken(token.EQUAL)
+	case '<':
+		if sc.match('=') {
+			return sc.makeToken(token.LESSEQUAL)
+		}
+		return sc.makeToken(token.LESS)
+	case '>':
+		if sc.match('=') {
+			return sc.makeToken(token.GREATEREQUAL)
+		}
+		return sc.makeToken(token.GREATER)
+	}
+	parseerror.Error(sc.line, "Unexpected character.")
 	return token.Token{Type: token.INVALID}
 }
 
@@ -72,4 +95,15 @@ func (sc *Scanner) isAtEnd() bool {
 func (sc *Scanner) advance() byte {
 	sc.current++
 	return sc.source[sc.current-1]
+}
+
+func (sc *Scanner) match(expected byte) bool {
+	if sc.isAtEnd() {
+		return false
+	}
+	if sc.source[sc.current] != expected {
+		return false
+	}
+	sc.current++
+	return true
 }

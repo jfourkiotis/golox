@@ -6,7 +6,7 @@ import (
 )
 
 func TestScanTokens(t *testing.T) {
-	input := `(){},.-+;*`
+	input := `(){},.-+;*=!=><<=>===!`
 	tests := []struct {
 		expectedType    token.Type
 		expectedLiteral string
@@ -21,6 +21,14 @@ func TestScanTokens(t *testing.T) {
 		{token.PLUS, "+"},
 		{token.SEMICOLON, ";"},
 		{token.STAR, "*"},
+		{token.EQUAL, "="},
+		{token.BANGEQUAL, "!="},
+		{token.GREATER, ">"},
+		{token.LESS, "<"},
+		{token.LESSEQUAL, "<="},
+		{token.GREATEREQUAL, ">="},
+		{token.EQUALEQUAL, "=="},
+		{token.BANG, "!"},
 	}
 
 	scanner := New(input)
