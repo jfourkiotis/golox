@@ -9,10 +9,13 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
+          - echo ${BITBUCKET_REPO_FULL_NAME}
           - PACKAGE_PATH="${GOPATH}/src/bitbucket.org/${BITBUCKET_REPO_FULL_NAME}"
+          - echo ${PACKAGE_PATH}
           - mkdir -pv "${PACKAGE_PATH}"
           - tar -cO --exclude-vcs --exclude=bitbucket-pipelines.yml . | tar -xv -C "${PACKAGE_PATH}"
           - cd "${PACKAGE_PATH}"
+          - ls -ltr
           - go get -v
           - go build -v
           - go test -v golox...
