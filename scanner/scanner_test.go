@@ -1,7 +1,6 @@
 package scanner
 
 import (
-	"fmt"
 	"golox/token"
 	"testing"
 )
@@ -39,7 +38,6 @@ func TestScanTokens(t *testing.T) {
 
 	scanner := New(input)
 	tokens := scanner.ScanTokens()
-	fmt.Println(tokens)
 
 	if len(tests) != len(tokens)-1 {
 		t.Fatalf("tests - number of token is wrong. expected=%d, got=%d", len(tests), len(tokens)-1)
