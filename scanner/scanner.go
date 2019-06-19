@@ -5,93 +5,114 @@ import (
 	"golox/token"
 )
 
-var singleCharTokens = map[byte]token.Type{
-	'(': token.LEFTPAREN,
-	')': token.RIGHTPAREN,
-	'{': token.LEFTBRACE,
-	'}': token.RIGHTBRACE,
-	',': token.COMMA,
-	'.': token.DOT,
-	'-': token.MINUS,
-	'+': token.PLUS,
-	';': token.SEMICOLON,
-	'*': token.STAR,
-}
-
 // Scanner transforms the source into tokens
 type Scanner struct {
 	source  string
 	start   int
 	current int
 	line    int
+	tokens  []token.Token
 }
 
 // New creates a new scanner
 func New(source string) Scanner {
-	scanner := Scanner{source: source, line: 1}
+	scanner := Scanner{source: source, line: 1, tokens: make([]token.Token, 0)}
 	return scanner
 }
 
 // ScanTokens transforms the source into an array of tokens. The last token
 // is always an token.EOF
 func (sc *Scanner) ScanTokens() []token.Token {
-	tokens := make([]token.Token, 0)
-
 	for !sc.isAtEnd() {
 		// we're at the beginning of the next lexeme
 		sc.start = sc.current
-		tok := sc.scanToken()
-		if tok.Type != token.INVALID {
-			tokens = append(tokens, tok)
-		}
+		sc.scanToken()
 	}
-
-	tokens = append(tokens, token.Token{Type: token.EOF})
-	return tokens
+	sc.tokens = append(sc.tokens, token.Token{Type: token.EOF})
+	return sc.tokens
 }
 
 func (sc *Scanner) makeToken(tp token.Type) token.Token {
-	literal := sc.source[sc.start:sc.current]
-	return token.Token{Type: tp, Literal: literal, Line: sc.line}
+	lexeme := sc.source[sc.start:sc.current]
+	return token.Token{Type: tp, Lexeme: lexeme, Line: sc.line}
 }
 
-func (sc *Scanner) scanToken() token.Token {
+func (sc *Scanner) addToken(tp token.Type) {
+	text := sc.source[sc.start:sc.current]
+	sc.tokens = append(sc.tokens, token.Token{Type: tp, Lexeme: text, Literal: nil, Line: sc.line})
+}
+
+func (sc *Scanner) scanToken() {
 	c := sc.advance()
-	tp, ok := singleCharTokens[c]
-	if ok {
-		return sc.makeToken(tp)
-	}
 
 	switch c {
+	case '(':
+		sc.addToken(token.LEFTPAREN)
+	case ')':
+		sc.addToken(token.RIGHTPAREN)
+	case '{':
+		sc.addToken(token.LEFTBRACE)
+	case '}':
+		sc.addToken(token.RIGHTBRACE)
+	case ',':
+		sc.addToken(token.COMMA)
+	case '.':
+		sc.addToken(token.DOT)
+	case '-':
+		sc.addToken(token.MINUS)
+	case '+':
+		sc.addToken(token.PLUS)
+	case ';':
+		sc.addToken(token.SEMICOLON)
+	case '*':
+		sc.addToken(token.STAR)
 	case '!':
 		if sc.match('=') {
-			return sc.makeToken(token.BANGEQUAL)
+			sc.addToken(token.BANGEQUAL)
+		} else {
+			sc.addToken(token.BANG)
 		}
-		return sc.makeToken(token.BANG)
 	case '=':
 		if sc.match('=') {
-			return sc.makeToken(token.EQUALEQUAL)
+			sc.addToken(token.EQUALEQUAL)
+		} else {
+			sc.addToken(token.EQUAL)
 		}
-		return sc.makeToken(token.EQUAL)
 	case '<':
 		if sc.match('=') {
-			return sc.makeToken(token.LESSEQUAL)
+			sc.addToken(token.LESSEQUAL)
+		} else {
+			sc.addToken(token.LESS)
 		}
-		return sc.makeToken(token.LESS)
 	case '>':
 		if sc.match('=') {
-			return sc.makeToken(token.GREATEREQUAL)
+			sc.addToken(token.GREATEREQUAL)
+		} else {
+			sc.addToken(token.GREATER)
 		}
-		return sc.makeToken(token.GREATER)
+	case '/':
+		if sc.match('/') {
+			// A comment goes until the end of the line
+			for sc.peek() != '\n' && !sc.isAtEnd() {
+				sc.advance()
+			}
+		} else {
+			sc.addToken(token.SLASH)
+		}
+	case '\n':
+		sc.line++
+	case ' ', '\r', '\t':
+		// do nothing
+	default:
+		parseerror.Error(sc.line, "Unexpected character.")
 	}
-	parseerror.Error(sc.line, "Unexpected character.")
-	return token.Token{Type: token.INVALID}
 }
 
 func (sc *Scanner) isAtEnd() bool {
 	return sc.current >= len(sc.source)
 }
 
+// advance returns the current character and advances to the next
 func (sc *Scanner) advance() byte {
 	sc.current++
 	return sc.source[sc.current-1]
@@ -106,4 +127,11 @@ func (sc *Scanner) match(expected byte) bool {
 	}
 	sc.current++
 	return true
+}
+
+func (sc *Scanner) peek() byte {
+	if sc.isAtEnd() {
+		return 0
+	}
+	return sc.source[sc.current]
 }

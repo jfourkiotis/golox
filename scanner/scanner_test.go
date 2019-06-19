@@ -1,15 +1,19 @@
 package scanner
 
 import (
+	"fmt"
 	"golox/token"
 	"testing"
 )
 
 func TestScanTokens(t *testing.T) {
-	input := `(){},.-+;*=!=><<=>===!`
+	input := `( ){     }, .-      +; * =	!=><<=>===!/
+				// a comment    
+		=
+	`
 	tests := []struct {
-		expectedType    token.Type
-		expectedLiteral string
+		expectedType   token.Type
+		expectedLexeme string
 	}{
 		{token.LEFTPAREN, "("},
 		{token.RIGHTPAREN, ")"},
@@ -29,10 +33,13 @@ func TestScanTokens(t *testing.T) {
 		{token.GREATEREQUAL, ">="},
 		{token.EQUALEQUAL, "=="},
 		{token.BANG, "!"},
+		{token.SLASH, "/"},
+		{token.EQUAL, "="},
 	}
 
 	scanner := New(input)
 	tokens := scanner.ScanTokens()
+	fmt.Println(tokens)
 
 	if len(tests) != len(tokens)-1 {
 		t.Fatalf("tests - number of token is wrong. expected=%d, got=%d", len(tests), len(tokens)-1)
@@ -40,10 +47,10 @@ func TestScanTokens(t *testing.T) {
 
 	for i, test := range tests {
 		if test.expectedType != tokens[i].Type {
-			t.Fatalf("tests[%d] - token type is wrong. expected=%q, got=%q", i, test.expectedType, tokens[0].Type)
+			t.Fatalf("tests[%d] - token type is wrong. expected=%q, got=%q", i, test.expectedType, tokens[i].Type)
 		}
-		if test.expectedLiteral != tokens[i].Literal {
-			t.Fatalf("tests[%d] - token literal is wrong. expected=%q, got=%q", i, test.expectedLiteral, tokens[0].Literal)
+		if test.expectedLexeme != tokens[i].Lexeme {
+			t.Fatalf("tests[%d] - token literal is wrong. expected=%q, got=%q", i, test.expectedLexeme, tokens[i].Lexeme)
 		}
 	}
 
