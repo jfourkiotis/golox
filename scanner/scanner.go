@@ -5,6 +5,19 @@ import (
 	"golox/token"
 )
 
+var singleCharTokens = map[byte]token.Type{
+	'(': token.LEFTPAREN,
+	')': token.RIGHTPAREN,
+	'{': token.LEFTBRACE,
+	'}': token.RIGHTBRACE,
+	',': token.COMMA,
+	'.': token.DOT,
+	'-': token.MINUS,
+	'+': token.PLUS,
+	';': token.SEMICOLON,
+	'*': token.STAR,
+}
+
 // Scanner transforms the source into tokens
 type Scanner struct {
 	source  string
@@ -37,43 +50,19 @@ func (sc *Scanner) ScanTokens() []token.Token {
 	return tokens
 }
 
+func (sc *Scanner) makeToken(tp token.Type) token.Token {
+	literal := sc.source[sc.start:sc.current]
+	return token.Token{Type: tp, Literal: literal, Line: sc.line}
+}
+
 func (sc *Scanner) scanToken() token.Token {
 	c := sc.advance()
-	switch c {
-	case '(':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.LEFTPAREN, Literal: literal, Line: sc.line}
-	case ')':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.RIGHTPAREN, Literal: literal, Line: sc.line}
-	case '{':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.LEFTBRACE, Literal: literal, Line: sc.line}
-	case '}':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.RIGHTBRACE, Literal: literal, Line: sc.line}
-	case ',':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.COMMA, Literal: literal, Line: sc.line}
-	case '.':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.DOT, Literal: literal, Line: sc.line}
-	case '-':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.MINUS, Literal: literal, Line: sc.line}
-	case '+':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.PLUS, Literal: literal, Line: sc.line}
-	case ';':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.SEMICOLON, Literal: literal, Line: sc.line}
-	case '*':
-		literal := sc.source[sc.start:sc.current]
-		return token.Token{Type: token.STAR, Literal: literal, Line: sc.line}
-	default:
-		parseerror.Error(sc.line, "Parse error")
-		return token.Token{Type: token.INVALID}
+	tp, ok := singleCharTokens[c]
+	if ok {
+		return sc.makeToken(tp)
 	}
+	parseerror.Error(sc.line, "Parse error")
+	return token.Token{Type: token.INVALID}
 }
 
 func (sc *Scanner) isAtEnd() bool {
