@@ -6,15 +6,19 @@ import (
 )
 
 func TestScanTokens(t *testing.T) {
-	input := `( ){     }, .-      +; * =	!=><<=>===!/
+	input := `48( ){     }, .-      +; * =	!=><<=>===!/
 				// a comment
 			"some string"    
 		=
+
+
+		8.66
 	`
 	tests := []struct {
 		expectedType   token.Type
 		expectedLexeme string
 	}{
+		{token.NUMBER, "48"},
 		{token.LEFTPAREN, "("},
 		{token.RIGHTPAREN, ")"},
 		{token.LEFTBRACE, "{"},
@@ -36,6 +40,7 @@ func TestScanTokens(t *testing.T) {
 		{token.SLASH, "/"},
 		{token.STRING, "\"some string\""},
 		{token.EQUAL, "="},
+		{token.NUMBER, "8.66"},
 	}
 
 	scanner := New(input)

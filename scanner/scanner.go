@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golox/parseerror"
 	"golox/token"
+	"strconv"
 )
 
 // Scanner transforms the source into tokens
@@ -67,6 +68,27 @@ func (sc *Scanner) scanString() {
 	// trim the surrounding quotes
 	value := sc.source[sc.start+1 : sc.current-1]
 	sc.addTokenWithLiteral(token.STRING, value)
+}
+
+func (sc *Scanner) scanNumber() {
+	for sc.isDigit(sc.peek()) {
+		sc.advance()
+	}
+
+	// look for a fractional part
+	if sc.peek() == '.' && sc.isDigit(sc.peekNext()) {
+		sc.advance() // consume "."
+		for sc.isDigit(sc.peek()) {
+			sc.advance()
+		}
+	}
+
+	number, err := strconv.ParseFloat(sc.source[sc.start:sc.current], 64)
+	if err != nil {
+		panic("Invalid number format")
+	} else {
+		sc.addTokenWithLiteral(token.NUMBER, number)
+	}
 }
 
 func (sc *Scanner) scanToken() {
@@ -133,8 +155,16 @@ func (sc *Scanner) scanToken() {
 	case '"':
 		sc.scanString()
 	default:
-		parseerror.Error(sc.line, fmt.Sprintf("Unexpected character: %c", c))
+		if sc.isDigit(c) {
+			sc.scanNumber()
+		} else {
+			parseerror.Error(sc.line, fmt.Sprintf("Unexpected character: %c", c))
+		}
 	}
+}
+
+func (sc *Scanner) isDigit(c byte) bool {
+	return c >= '0' && c <= '9'
 }
 
 func (sc *Scanner) isAtEnd() bool {
@@ -163,4 +193,11 @@ func (sc *Scanner) peek() byte {
 		return 0
 	}
 	return sc.source[sc.current]
+}
+
+func (sc *Scanner) peekNext() byte {
+	if sc.current+1 >= len(sc.source) {
+		return 0
+	}
+	return sc.source[sc.current+1]
 }
