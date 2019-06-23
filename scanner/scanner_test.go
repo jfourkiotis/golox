@@ -12,7 +12,17 @@ func TestScanTokens(t *testing.T) {
 		=
 
 
-		8.66
+		8.66 and class 
+		else false	for	fun			if	nil
+
+
+
+		or
+		print
+		return
+					super
+					this
+							true var while whilevar ifnil
 	`
 	tests := []struct {
 		expectedType   token.Type
@@ -41,6 +51,24 @@ func TestScanTokens(t *testing.T) {
 		{token.STRING, "\"some string\""},
 		{token.EQUAL, "="},
 		{token.NUMBER, "8.66"},
+		{token.AND, "and"},
+		{token.CLASS, "class"},
+		{token.ELSE, "else"},
+		{token.FALSE, "false"},
+		{token.FOR, "for"},
+		{token.FUN, "fun"},
+		{token.IF, "if"},
+		{token.NIL, "nil"},
+		{token.OR, "or"},
+		{token.PRINT, "print"},
+		{token.RETURN, "return"},
+		{token.SUPER, "super"},
+		{token.THIS, "this"},
+		{token.TRUE, "true"},
+		{token.VAR, "var"},
+		{token.WHILE, "while"},
+		{token.IDENTIFIER, "whilevar"},
+		{token.IDENTIFIER, "ifnil"},
 	}
 
 	scanner := New(input)
