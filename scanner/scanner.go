@@ -7,6 +7,25 @@ import (
 	"strconv"
 )
 
+var keywords = map[string]token.Type{
+	"and":    token.AND,
+	"class":  token.CLASS,
+	"else":   token.ELSE,
+	"false":  token.FALSE,
+	"for":    token.FOR,
+	"fun":    token.FUN,
+	"if":     token.IF,
+	"nil":    token.NIL,
+	"or":     token.OR,
+	"print":  token.PRINT,
+	"return": token.RETURN,
+	"super":  token.SUPER,
+	"this":   token.THIS,
+	"true":   token.TRUE,
+	"var":    token.VAR,
+	"while":  token.WHILE,
+}
+
 // Scanner transforms the source into tokens
 type Scanner struct {
 	source  string
@@ -91,6 +110,21 @@ func (sc *Scanner) scanNumber() {
 	}
 }
 
+func (sc *Scanner) scanIdentifier() {
+	for sc.isAlphaNumeric(sc.peek()) {
+		sc.advance()
+	}
+
+	// see if the identifier is a reserved word
+	text := sc.source[sc.start:sc.current]
+	tp, ok := keywords[text]
+	if ok {
+		sc.addToken(tp)
+	} else {
+		sc.addToken(token.IDENTIFIER)
+	}
+}
+
 func (sc *Scanner) scanToken() {
 	c := sc.advance()
 
@@ -157,6 +191,8 @@ func (sc *Scanner) scanToken() {
 	default:
 		if sc.isDigit(c) {
 			sc.scanNumber()
+		} else if sc.isAlpha(c) {
+			sc.scanIdentifier()
 		} else {
 			parseerror.Error(sc.line, fmt.Sprintf("Unexpected character: %c", c))
 		}
@@ -165,6 +201,16 @@ func (sc *Scanner) scanToken() {
 
 func (sc *Scanner) isDigit(c byte) bool {
 	return c >= '0' && c <= '9'
+}
+
+func (sc *Scanner) isAlpha(c byte) bool {
+	return (c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		c == '_'
+}
+
+func (sc *Scanner) isAlphaNumeric(c byte) bool {
+	return sc.isAlpha(c) || sc.isDigit(c)
 }
 
 func (sc *Scanner) isAtEnd() bool {
