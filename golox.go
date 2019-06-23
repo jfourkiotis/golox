@@ -46,7 +46,7 @@ func run(src string) {
 }
 
 func main() {
-	file := flag.String("file", "", "the script file to execute")
+	flag.String("file", "", "the script file to execute")
 	flag.Parse()
 
 	args := flag.Args()
@@ -54,7 +54,7 @@ func main() {
 		fmt.Println("Usage: ./golox [script]")
 		os.Exit(64)
 	} else if len(args) == 1 {
-		runFile(*file)
+		runFile(args[0])
 	} else {
 		runPrompt()
 	}
