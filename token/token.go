@@ -28,6 +28,7 @@ const (
 	GREATEREQUAL = ">="
 	LESS         = "<"
 	LESSEQUAL    = "<="
+	POWER        = "**"
 	// literals
 	IDENTIFIER = "IDENT"
 	STRING     = "STRING"

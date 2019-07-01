@@ -95,7 +95,18 @@ func (p *Parser) unary() ast.Expr {
 		return &ast.Unary{Operator: operator, Right: right}
 	}
 
-	return p.primary()
+	return p.power()
+}
+
+func (p *Parser) power() ast.Expr {
+	expr := p.primary()
+
+	for p.match(token.POWER) {
+		operator := p.previous()
+		right := p.unary()
+		return &ast.Binary{Left: expr, Operator: operator, Right: right}
+	}
+	return expr
 }
 
 func (p *Parser) primary() ast.Expr {

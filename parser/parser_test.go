@@ -139,6 +139,7 @@ func TestParseBinaryOperators(t *testing.T) {
 		{"1-2", 1, "-", 2},
 		{"1*2", 1, "*", 2},
 		{"1/2", 1, "/", 2},
+		{"1**2", 1, "**", 2},
 		{"1 != 5", 1, "!=", 5},
 		{"1 == 5", 1, "==", 5},
 		{"1 >= 5", 1, ">=", 5},
@@ -235,4 +236,88 @@ func TestParseGroupedExpressions(t *testing.T) {
 
 		testIntegerLiteral(g.Expression, test.expected, t)
 	}
+}
+
+func TestParseUnaryPowerExpressions(t *testing.T) {
+	input1 := "-5**2"
+
+	s1 := scanner.New(input1)
+	t1 := s1.ScanTokens()
+	p1 := New(t1)
+	e1 := p1.Parse()
+
+	u1, ok := e1.(*ast.Unary)
+
+	if !ok {
+		t.Fatalf("Unary expression expected. Got=%T", e1)
+	}
+
+	pow1 := u1.Right
+	b1, ok := pow1.(*ast.Binary)
+
+	if !ok {
+		t.Fatalf("Binary expression expected. Got=%T", pow1)
+	}
+
+	if b1.Operator.Lexeme != "**" {
+		t.Errorf("Power operator expected. Got=%v", b1.Operator)
+	}
+
+	testIntegerLiteral(b1.Left, 5, t)
+	testIntegerLiteral(b1.Right, 2, t)
+
+	input2 := "-5**-2"
+
+	s2 := scanner.New(input2)
+	t2 := s2.ScanTokens()
+	p2 := New(t2)
+	e2 := p2.Parse()
+
+	u2, ok := e2.(*ast.Unary)
+
+	if !ok {
+		t.Fatalf("Unary expression expected. Got=%T", e1)
+	}
+
+	pow2 := u2.Right
+	b2, ok := pow2.(*ast.Binary)
+
+	if !ok {
+		t.Fatalf("Binary expression expected. Got=%T", pow2)
+	}
+
+	if b2.Operator.Lexeme != "**" {
+		t.Errorf("Power operator expected. Got=%v", b2.Operator)
+	}
+
+	testIntegerLiteral(b1.Left, 5, t)
+
+	u3, ok := b2.Right.(*ast.Unary)
+	if !ok {
+		t.Fatalf("Unary expression expected. Got=%T", b2.Right)
+	}
+
+	testIntegerLiteral(u3.Right, 2, t)
+
+	input3 := "5**2**5"
+
+	s3 := scanner.New(input3)
+	t3 := s3.ScanTokens()
+	p3 := New(t3)
+	e3 := p3.Parse()
+
+	b3, ok := e3.(*ast.Binary)
+	if !ok {
+		t.Fatalf("Unary expression expected. Got=%T", b3)
+	}
+
+	testIntegerLiteral(b3.Left, 5, t)
+
+	b4, ok := b3.Right.(*ast.Binary)
+	if !ok {
+		t.Fatalf("Unary expression expected. Got=%T", b3.Right)
+	}
+
+	testIntegerLiteral(b4.Left, 2, t)
+	testIntegerLiteral(b4.Right, 5, t)
 }
