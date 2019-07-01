@@ -13,7 +13,8 @@ comparison -> addition ( ( ">" | ">=" | "<" | "<=") addition )*;
 addition   -> multiplication ( ( "+" | "-" ) multiplication )*;
 multiplication -> unary ( ( "/" | "*" ) unary )*;
 unary      -> ( "!" | "-" ) unary
-			| primary ;
+			| power ;
+power      -> primary ( "**" unary ) *
 primary    -> NUMBER | STRING | "false" | "true" | "nil"
             | "(" expression ")" ;
 */
