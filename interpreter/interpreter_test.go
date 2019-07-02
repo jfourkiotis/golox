@@ -28,7 +28,7 @@ func TestEvalLiteral(t *testing.T) {
 		parser := parser.New(tokens)
 		expression := parser.Parse()
 
-		result := Eval(expression)
+		result, _ := Eval(expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -54,7 +54,7 @@ func TestEvalUnary(t *testing.T) {
 		parser := parser.New(tokens)
 		expression := parser.Parse()
 
-		result := Eval(expression)
+		result, _ := Eval(expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -89,7 +89,7 @@ func TestEvalBinary(t *testing.T) {
 		parser := parser.New(tokens)
 		expression := parser.Parse()
 
-		result := Eval(expression)
+		result, _ := Eval(expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -112,7 +112,7 @@ func TestEvalBinaryPrecedence(t *testing.T) {
 		parser := parser.New(tokens)
 		expression := parser.Parse()
 
-		result := Eval(expression)
+		result, _ := Eval(expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -132,7 +132,7 @@ func TestEvalTernary(t *testing.T) {
 		parser := parser.New(tokens)
 		expression := parser.Parse()
 
-		result := Eval(expression)
+		result, _ := Eval(expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }

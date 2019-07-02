@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"golox/interpreter"
+	"golox/parseerror"
+	"golox/parser"
+	"golox/runtimeerror"
 	"golox/scanner"
 	"io/ioutil"
 	"os"
 )
-
-var hadError = false
 
 func check(err error) {
 	if err != nil {
@@ -21,8 +23,10 @@ func runFile(file string) {
 	dat, err := ioutil.ReadFile(file)
 	check(err)
 	run(string(dat))
-	if hadError {
+	if parseerror.HadError {
 		os.Exit(65)
+	} else if runtimeerror.HadError {
+		os.Exit(70)
 	}
 }
 
@@ -33,16 +37,19 @@ func runPrompt() {
 		dat, err := reader.ReadBytes('\n') // there is also ReadString
 		check(err)
 		run(string(dat))
-		hadError = false
+		parseerror.HadError = false
 	}
 }
 
 func run(src string) {
 	scanner := scanner.New(src)
 	tokens := scanner.ScanTokens()
-	for _, tok := range tokens {
-		fmt.Println(tok)
+	parser := parser.New(tokens)
+	if parseerror.HadError {
+		return
 	}
+	expression := parser.Parse()
+	interpreter.Interpret(expression)
 }
 
 func main() {
