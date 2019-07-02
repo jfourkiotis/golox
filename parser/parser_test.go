@@ -128,6 +128,31 @@ func TestParseNil(t *testing.T) {
 	}
 }
 
+func TestParseTernaryOperator(t *testing.T) {
+	input := "7 ? 10 : 4"
+
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := New(tokens)
+	expression := parser.Parse()
+
+	ternary, ok := expression.(*ast.Ternary)
+	if !ok {
+		t.Fatalf("Expected ast.Ternary operator. Got=%T", expression)
+	}
+
+	if ternary.QMark.Lexeme != "?" {
+		t.Errorf("Expected ternary questionmark operator. Got=%v", ternary.QMark.Lexeme)
+	}
+	if ternary.Colon.Lexeme != ":" {
+		t.Errorf("Expected ternary colon operator. Got=%v", ternary.Colon.Lexeme)
+	}
+
+	testIntegerLiteral(ternary.Condition, 7, t)
+	testIntegerLiteral(ternary.Then, 10, t)
+	testIntegerLiteral(ternary.Else, 4, t)
+}
+
 func TestParseBinaryOperators(t *testing.T) {
 	tests := []struct {
 		input    string

@@ -25,7 +25,8 @@ func TestScanTokens(t *testing.T) {
 							true var while whilevar ifnil
 
 
-							** ***
+							** *** ?:
+							: ?
 	`
 	tests := []struct {
 		expectedType   token.Type
@@ -75,6 +76,10 @@ func TestScanTokens(t *testing.T) {
 		{token.POWER, "**"},
 		{token.POWER, "**"},
 		{token.STAR, "*"},
+		{token.QMARK, "?"},
+		{token.COLON, ":"},
+		{token.COLON, ":"},
+		{token.QMARK, "?"},
 	}
 
 	scanner := New(input)

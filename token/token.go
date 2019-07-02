@@ -19,6 +19,8 @@ const (
 	SEMICOLON  = ";"
 	SLASH      = "/"
 	STAR       = "*"
+	QMARK      = "?"
+	COLON      = ":"
 	// one or two character tokens
 	BANG         = "!"
 	BANGEQUAL    = "!="

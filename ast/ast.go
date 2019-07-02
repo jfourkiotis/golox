@@ -32,3 +32,13 @@ type Unary struct {
 	Operator token.Token
 	Right    Expr
 }
+
+// Ternary is the famous ?: operator
+type Ternary struct {
+	Expr
+	Condition Expr
+	QMark     token.Token
+	Then      Expr
+	Colon     token.Token
+	Else      Expr
+}

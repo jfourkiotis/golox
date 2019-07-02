@@ -8,7 +8,8 @@ import (
 
 /*
 expression -> comma ;
-comma      -> equality ( "," equality ) * ;
+comma      -> ternary ( "," ternary ) * ;
+ternary    -> equality "?"  expression ":" expression ;
 equality   -> comparison ( ( "!=" | "==") comparison )* ;
 comparison -> addition ( ( ">" | ">=" | "<" | "<=") addition )*;
 addition   -> multiplication ( ( "+" | "-" ) multiplication )*;
@@ -43,15 +44,28 @@ func (p *Parser) expression() ast.Expr {
 }
 
 func (p *Parser) comma() ast.Expr {
-	expr := p.equality()
+	expr := p.ternary()
 
 	for p.match(",") {
 		operator := p.previous()
-		right := p.equality()
+		right := p.ternary()
 		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
 	}
 
 	return expr
+}
+
+func (p *Parser) ternary() ast.Expr {
+	cond := p.equality()
+	if p.match("?") {
+		qmark := p.previous()
+		thenClause := p.expression()
+		p.match(":") // TODO: error handling
+		colon := p.previous()
+		elseClause := p.expression()
+		return &ast.Ternary{Condition: cond, QMark: qmark, Then: thenClause, Colon: colon, Else: elseClause}
+	}
+	return cond
 }
 
 func (p *Parser) equality() ast.Expr {
