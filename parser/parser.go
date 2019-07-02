@@ -7,7 +7,8 @@ import (
 )
 
 /*
-expression -> equality ;
+expression -> comma ;
+comma      -> equality ( "," equality ) * ;
 equality   -> comparison ( ( "!=" | "==") comparison )* ;
 comparison -> addition ( ( ">" | ">=" | "<" | "<=") addition )*;
 addition   -> multiplication ( ( "+" | "-" ) multiplication )*;
@@ -38,7 +39,19 @@ func (p *Parser) Parse() ast.Expr {
 }
 
 func (p *Parser) expression() ast.Expr {
-	return p.equality()
+	return p.comma()
+}
+
+func (p *Parser) comma() ast.Expr {
+	expr := p.equality()
+
+	for p.match(",") {
+		operator := p.previous()
+		right := p.equality()
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
+	}
+
+	return expr
 }
 
 func (p *Parser) equality() ast.Expr {
