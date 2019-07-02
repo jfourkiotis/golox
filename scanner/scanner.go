@@ -145,6 +145,10 @@ func (sc *Scanner) scanToken() {
 		sc.addToken(token.MINUS)
 	case '+':
 		sc.addToken(token.PLUS)
+	case '?':
+		sc.addToken(token.QMARK)
+	case ':':
+		sc.addToken(token.COLON)
 	case ';':
 		sc.addToken(token.SEMICOLON)
 	case '*':
