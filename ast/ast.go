@@ -2,8 +2,12 @@ package ast
 
 import "golox/token"
 
+// Node is the root class of AST nodes
+type Node interface{}
+
 // Expr is the root class of expression nodes
 type Expr interface {
+	Node
 }
 
 // Binary is used for binary operators
@@ -41,4 +45,56 @@ type Ternary struct {
 	Then      Expr
 	Colon     token.Token
 	Else      Expr
+}
+
+// Statements and state
+
+// Assign is used for variable assignment
+// name = value
+type Assign struct {
+	Expr
+	Name  token.Token
+	Value Expr
+}
+
+// Variable access expression
+// print x
+type Variable struct {
+	Expr
+	Name token.Token
+}
+
+// Stmt form a second hierarchy of syntax nodes independent of expressions
+type Stmt interface {
+	Node
+}
+
+// Block is a curly-braced block statement that defines a local scope
+// {
+//   ...
+// }
+type Block struct {
+	Stmt
+	Statements []Stmt
+}
+
+// Expression statement
+type Expression struct {
+	Stmt
+	Expression Expr
+}
+
+// Print statement
+// print 1 + 2
+type Print struct {
+	Stmt
+	Expression Expr
+}
+
+// Var is the variable declaration statement
+//
+type Var struct {
+	Stmt
+	Name        token.Token
+	Initializer Expr
 }

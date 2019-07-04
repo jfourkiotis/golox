@@ -15,17 +15,17 @@ const (
 
 // Interpret tries to calculate the result of an expression, or print a message
 // if an error occurs
-func Interpret(node ast.Expr) {
-	result, ok := Eval(node)
-	if !ok {
-		runtimeerror.Print(result.(string))
-	} else {
-		fmt.Printf("%v\n", result)
+func Interpret(statements []ast.Stmt) {
+	for stmt := range statements {
+		r, ok := Eval(stmt)
+		if !ok {
+			runtimeerror.Print(r.(string))
+		}
 	}
 }
 
 // Eval evaluates the given AST
-func Eval(node ast.Expr) (interface{}, bool) {
+func Eval(node ast.Node) (interface{}, bool) {
 	switch n := node.(type) {
 	case *ast.Literal:
 		return n.Value, true
@@ -162,6 +162,19 @@ func Eval(node ast.Expr) (interface{}, bool) {
 			return Eval(n.Then)
 		}
 		return Eval(n.Else)
+	case *ast.Print:
+		value, ok := Eval(n.Expression)
+		if !ok {
+			return value, ok
+		}
+		fmt.Println(value)
+		return nil, true
+	case *ast.Expression:
+		r, ok := Eval(n.Expression)
+		if !ok {
+			return r, ok
+		}
+		return nil, ok
 	}
 	panic("Fatal error")
 }

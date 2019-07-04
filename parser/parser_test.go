@@ -35,7 +35,7 @@ func TestParseNumbers(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		testIntegerLiteral(expression, test.expected, t)
 	}
@@ -54,7 +54,7 @@ func TestParseStrings(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		literal, ok := expression.(*ast.Literal)
 		if !ok {
@@ -85,7 +85,7 @@ func TestParseBooleans(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		literal, ok := expression.(*ast.Literal)
 		if !ok {
@@ -115,7 +115,7 @@ func TestParseNil(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		literal, ok := expression.(*ast.Literal)
 		if !ok {
@@ -134,7 +134,7 @@ func TestParseTernaryOperator(t *testing.T) {
 	scanner := scanner.New(input)
 	tokens := scanner.ScanTokens()
 	parser := New(tokens)
-	expression := parser.Parse()
+	expression := parser.expression()
 
 	ternary, ok := expression.(*ast.Ternary)
 	if !ok {
@@ -178,7 +178,7 @@ func TestParseBinaryOperators(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		binary, ok := expression.(*ast.Binary)
 		if !ok {
@@ -209,7 +209,7 @@ func TestParseUnaryOperators(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		unary, ok := expression.(*ast.Unary)
 		if !ok {
@@ -253,7 +253,7 @@ func TestParseGroupedExpressions(t *testing.T) {
 		scanner := scanner.New(test.input)
 		tokens := scanner.ScanTokens()
 		parser := New(tokens)
-		expression := parser.Parse()
+		expression := parser.expression()
 
 		g, ok := expression.(*ast.Grouping)
 		if !ok {
@@ -264,13 +264,65 @@ func TestParseGroupedExpressions(t *testing.T) {
 	}
 }
 
+func TestParseExpressionStatement(t *testing.T) {
+	numtests := []struct {
+		input    string
+		expected float64
+	}{
+		{"5;", 5},
+	}
+
+	for _, test := range numtests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		stmtList := parser.Parse()
+
+		if len(stmtList) != 1 {
+			t.Fatalf("Expected 1 statement. Got=%v", len(stmtList))
+		}
+
+		exprStmt, ok := stmtList[0].(*ast.Expression)
+		if !ok {
+			t.Fatalf("Expected *ast.Expression. Got=%T", stmtList[0])
+		}
+		testIntegerLiteral(exprStmt.Expression, 5, t)
+	}
+}
+
+func TestParsePrintStatement(t *testing.T) {
+	numtests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"print 5;", 5},
+	}
+
+	for _, test := range numtests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		stmtList := parser.Parse()
+
+		if len(stmtList) != 1 {
+			t.Fatalf("Expected 1 statement. Got=%v", len(stmtList))
+		}
+
+		printStmt, ok := stmtList[0].(*ast.Print)
+		if !ok {
+			t.Fatalf("Expected *ast.Print. Got=%T", stmtList[0])
+		}
+		testIntegerLiteral(printStmt.Expression, 5, t)
+	}
+}
+
 func TestParseUnaryPowerExpressions(t *testing.T) {
 	input1 := "-5**2"
 
 	s1 := scanner.New(input1)
 	t1 := s1.ScanTokens()
 	p1 := New(t1)
-	e1 := p1.Parse()
+	e1 := p1.expression()
 
 	u1, ok := e1.(*ast.Unary)
 
@@ -297,7 +349,7 @@ func TestParseUnaryPowerExpressions(t *testing.T) {
 	s2 := scanner.New(input2)
 	t2 := s2.ScanTokens()
 	p2 := New(t2)
-	e2 := p2.Parse()
+	e2 := p2.expression()
 
 	u2, ok := e2.(*ast.Unary)
 
@@ -330,7 +382,7 @@ func TestParseUnaryPowerExpressions(t *testing.T) {
 	s3 := scanner.New(input3)
 	t3 := s3.ScanTokens()
 	p3 := New(t3)
-	e3 := p3.Parse()
+	e3 := p3.expression()
 
 	b3, ok := e3.(*ast.Binary)
 	if !ok {

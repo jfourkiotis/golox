@@ -48,8 +48,8 @@ func run(src string) {
 	if parseerror.HadError {
 		return
 	}
-	expression := parser.Parse()
-	interpreter.Interpret(expression)
+	statements := parser.Parse()
+	interpreter.Interpret(statements)
 }
 
 func main() {

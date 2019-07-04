@@ -7,6 +7,11 @@ import (
 )
 
 /*
+program    -> stmt* EOF ;
+stmt       -> exprStmt
+			| printStmt
+exprStmt   -> expression ";" ;
+printStmt  -> "print" expression ";" ;
 expression -> comma ;
 comma      -> ternary ( "," ternary ) * ;
 ternary    -> equality "?"  expression ":" expression ;
@@ -34,9 +39,31 @@ func New(tokens []token.Token) Parser {
 }
 
 // Parse is the driver function that begins parsing
-func (p *Parser) Parse() ast.Expr {
+func (p *Parser) Parse() []ast.Stmt {
+	statements := make([]ast.Stmt, 0)
+	for !p.isAtEnd() {
+		statements = append(statements, p.statement())
+	}
+	return statements
+}
+
+func (p *Parser) statement() ast.Stmt {
+	if p.match(token.PRINT) {
+		return p.printStatement()
+	}
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() ast.Stmt {
 	expr := p.expression()
-	return expr
+	p.consume(token.SEMICOLON, "Expected ';' after value.")
+	return &ast.Print{Expression: expr}
+}
+
+func (p *Parser) expressionStatement() ast.Stmt {
+	expr := p.expression()
+	p.consume(token.SEMICOLON, "Expected ';' after value.")
+	return &ast.Expression{Expression: expr}
 }
 
 func (p *Parser) expression() ast.Expr {
