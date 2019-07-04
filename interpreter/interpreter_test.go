@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"golox/ast"
 	"golox/parser"
 	"golox/scanner"
 	"math"
@@ -12,23 +13,32 @@ func TestEvalLiteral(t *testing.T) {
 		literal  string
 		expected interface{}
 	}{
-		{"5", 5.0},
-		{"false", false},
-		{"true", true},
-		{"\"hello\"", "hello"},
-		{"(5)", 5.0},
-		{"(false)", false},
-		{"(true)", true},
-		{"(\"hello\")", "hello"},
+		{"5;", 5.0},
+		{"false;", false},
+		{"true;", true},
+		{"\"hello\";", "hello"},
+		{"(5);", 5.0},
+		{"(false);", false},
+		{"(true);", true},
+		{"(\"hello\");", "hello"},
 	}
 
 	for _, test := range tests {
 		scanner := scanner.New(test.literal)
 		tokens := scanner.ScanTokens()
 		parser := parser.New(tokens)
-		expression := parser.Parse()
+		statements := parser.Parse()
 
-		result, _ := Eval(expression)
+		if len(statements) != 1 {
+			t.Fatalf("Expected 1 statement. Got %v", len(statements))
+		}
+
+		exprStmt, ok := statements[0].(*ast.Expression)
+		if !ok {
+			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
+		}
+
+		result, _ := Eval(exprStmt.Expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -38,23 +48,32 @@ func TestEvalUnary(t *testing.T) {
 		literal  string
 		expected interface{}
 	}{
-		{"-5", -5.0},
-		{"!false", true},
-		{"true", true},
-		{"false", false},
-		{"!true", false},
-		{"!5", false},
-		{"!nil", true},
-		{"!\"hello\"", false},
+		{"-5;", -5.0},
+		{"!false;", true},
+		{"true;", true},
+		{"false;", false},
+		{"!true;", false},
+		{"!5;", false},
+		{"!nil;", true},
+		{"!\"hello\";", false},
 	}
 
 	for _, test := range tests {
 		scanner := scanner.New(test.literal)
 		tokens := scanner.ScanTokens()
 		parser := parser.New(tokens)
-		expression := parser.Parse()
+		statements := parser.Parse()
 
-		result, _ := Eval(expression)
+		if len(statements) != 1 {
+			t.Fatalf("Expected 1 statement. Got %v", len(statements))
+		}
+
+		exprStmt, ok := statements[0].(*ast.Expression)
+		if !ok {
+			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
+		}
+
+		result, _ := Eval(exprStmt.Expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -64,32 +83,41 @@ func TestEvalBinary(t *testing.T) {
 		literal  string
 		expected interface{}
 	}{
-		{"1 + 2", 3.0},
-		{"1 - 2", -1.0},
-		{"1 / 2", 0.5},
-		{"1 * 2", 2.0},
-		{"2 ** 2", 4.0},
-		{"\"hello \" + \"world\"", "hello world"},
-		{"1 > 2", false},
-		{"1 >= 2", false},
-		{"1 < 2", true},
-		{"1 <= 2", true},
-		{"1 == 1", true},
-		{"1 != 1", false},
-		{"\"hello\" == 1", false},
-		{"\"hello\" == \"hello\"", true},
-		{"nil != nil", false},
-		{"nil == 5", false},
-		{"5.2 == 5.2", true},
+		{"1 + 2;", 3.0},
+		{"1 - 2;", -1.0},
+		{"1 / 2;", 0.5},
+		{"1 * 2;", 2.0},
+		{"2 ** 2;", 4.0},
+		{"\"hello \" + \"world\";", "hello world"},
+		{"1 > 2;", false},
+		{"1 >= 2;", false},
+		{"1 < 2;", true},
+		{"1 <= 2;", true},
+		{"1 == 1;", true},
+		{"1 != 1;", false},
+		{"\"hello\" == 1;", false},
+		{"\"hello\" == \"hello\";", true},
+		{"nil != nil;", false},
+		{"nil == 5;", false},
+		{"5.2 == 5.2;", true},
 	}
 
 	for _, test := range tests {
 		scanner := scanner.New(test.literal)
 		tokens := scanner.ScanTokens()
 		parser := parser.New(tokens)
-		expression := parser.Parse()
+		statements := parser.Parse()
 
-		result, _ := Eval(expression)
+		if len(statements) != 1 {
+			t.Fatalf("Expected 1 statement. Got %v", len(statements))
+		}
+
+		exprStmt, ok := statements[0].(*ast.Expression)
+		if !ok {
+			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
+		}
+
+		result, _ := Eval(exprStmt.Expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -99,20 +127,29 @@ func TestEvalBinaryPrecedence(t *testing.T) {
 		literal  string
 		expected interface{}
 	}{
-		{"1 - 2 - 3", -4.0},
-		{"1 + 2 * 3", 7.0},
-		{"2 ** 3 ** 2", 512.0},
-		{"-2 ** 3 ** -2", -math.Pow(2.0, math.Pow(3.0, -2.0))},
-		{"--2", 2.0},
+		{"1 - 2 - 3;", -4.0},
+		{"1 + 2 * 3;", 7.0},
+		{"2 ** 3 ** 2;", 512.0},
+		{"-2 ** 3 ** -2;", -math.Pow(2.0, math.Pow(3.0, -2.0))},
+		{"--2;", 2.0},
 	}
 
 	for _, test := range tests {
 		scanner := scanner.New(test.literal)
 		tokens := scanner.ScanTokens()
 		parser := parser.New(tokens)
-		expression := parser.Parse()
+		statements := parser.Parse()
 
-		result, _ := Eval(expression)
+		if len(statements) != 1 {
+			t.Fatalf("Expected 1 statement. Got %v", len(statements))
+		}
+
+		exprStmt, ok := statements[0].(*ast.Expression)
+		if !ok {
+			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
+		}
+
+		result, _ := Eval(exprStmt.Expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -122,17 +159,26 @@ func TestEvalTernary(t *testing.T) {
 		literal  string
 		expected interface{}
 	}{
-		{"1 ? 2 : 3", 2.0},
-		{"nil ? 2 : 3", 3.0},
+		{"1 ? 2 : 3;", 2.0},
+		{"nil ? 2 : 3;", 3.0},
 	}
 
 	for _, test := range tests {
 		scanner := scanner.New(test.literal)
 		tokens := scanner.ScanTokens()
 		parser := parser.New(tokens)
-		expression := parser.Parse()
+		statements := parser.Parse()
 
-		result, _ := Eval(expression)
+		if len(statements) != 1 {
+			t.Fatalf("Expected 1 statement. Got %v", len(statements))
+		}
+
+		exprStmt, ok := statements[0].(*ast.Expression)
+		if !ok {
+			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
+		}
+
+		result, _ := Eval(exprStmt.Expression)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
