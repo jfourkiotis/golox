@@ -77,7 +77,7 @@ func (sc *Scanner) scanString() {
 
 	// unterminated string
 	if sc.isAtEnd() {
-		parseerror.Error(sc.line, "Unterminated string.")
+		parseerror.LogMessage(sc.line, "Unterminated string.")
 		return
 	}
 
@@ -202,7 +202,7 @@ func (sc *Scanner) scanToken() {
 		} else if sc.isAlpha(c) {
 			sc.scanIdentifier()
 		} else {
-			parseerror.Error(sc.line, fmt.Sprintf("Unexpected character: %c", c))
+			parseerror.LogMessage(sc.line, fmt.Sprintf("Unexpected character: %c", c))
 		}
 	}
 }

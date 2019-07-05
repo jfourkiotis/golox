@@ -92,7 +92,7 @@ type Print struct {
 }
 
 // Var is the variable declaration statement
-//
+// var <name> = <initializer>
 type Var struct {
 	Stmt
 	Name        token.Token

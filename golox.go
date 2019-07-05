@@ -45,10 +45,10 @@ func run(src string) {
 	scanner := scanner.New(src)
 	tokens := scanner.ScanTokens()
 	parser := parser.New(tokens)
+	statements := parser.Parse()
 	if parseerror.HadError {
 		return
 	}
-	statements := parser.Parse()
 	interpreter.Interpret(statements)
 }
 
