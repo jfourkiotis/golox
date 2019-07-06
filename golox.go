@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"golox/env"
 	"golox/interpreter"
 	"golox/parseerror"
 	"golox/parser"
@@ -22,7 +23,7 @@ func check(err error) {
 func runFile(file string) {
 	dat, err := ioutil.ReadFile(file)
 	check(err)
-	run(string(dat))
+	run(string(dat), env.New())
 	if parseerror.HadError {
 		os.Exit(65)
 	} else if runtimeerror.HadError {
@@ -32,16 +33,17 @@ func runFile(file string) {
 
 func runPrompt() {
 	reader := bufio.NewReader(os.Stdin)
+	env := env.New()
 	for {
 		fmt.Print("> ")
 		dat, err := reader.ReadBytes('\n') // there is also ReadString
 		check(err)
-		run(string(dat))
+		run(string(dat), env)
 		parseerror.HadError = false
 	}
 }
 
-func run(src string) {
+func run(src string, env *env.Environment) {
 	scanner := scanner.New(src)
 	tokens := scanner.ScanTokens()
 	parser := parser.New(tokens)
@@ -49,7 +51,7 @@ func run(src string) {
 	if parseerror.HadError {
 		return
 	}
-	interpreter.Interpret(statements)
+	interpreter.Interpret(statements, env)
 }
 
 func main() {

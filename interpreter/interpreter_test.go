@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"golox/ast"
+	"golox/env"
 	"golox/parser"
 	"golox/scanner"
 	"math"
@@ -38,7 +39,7 @@ func TestEvalLiteral(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression)
+		result, _ := Eval(exprStmt.Expression, env.New())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -73,7 +74,7 @@ func TestEvalUnary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression)
+		result, _ := Eval(exprStmt.Expression, env.New())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -117,7 +118,7 @@ func TestEvalBinary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression)
+		result, _ := Eval(exprStmt.Expression, env.New())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -149,7 +150,7 @@ func TestEvalBinaryPrecedence(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression)
+		result, _ := Eval(exprStmt.Expression, env.New())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -178,7 +179,7 @@ func TestEvalTernary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression)
+		result, _ := Eval(exprStmt.Expression, env.New())
 		testLiteralEquality(result, test.expected, t)
 	}
 }

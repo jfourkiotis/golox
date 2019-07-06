@@ -3,6 +3,7 @@ package interpreter
 import (
 	"fmt"
 	"golox/ast"
+	"golox/env"
 	"golox/runtimeerror"
 	"golox/token"
 	"math"
@@ -15,166 +16,179 @@ const (
 
 // Interpret tries to calculate the result of an expression, or print a message
 // if an error occurs
-func Interpret(statements []ast.Stmt) {
-	for stmt := range statements {
-		r, ok := Eval(stmt)
-		if !ok {
-			runtimeerror.Print(r.(string))
+func Interpret(statements []ast.Stmt, env *env.Environment) {
+	for _, stmt := range statements {
+		_, err := Eval(stmt, env)
+		if err != nil {
+			runtimeerror.Print(err.Error())
 		}
 	}
 }
 
 // Eval evaluates the given AST
-func Eval(node ast.Node) (interface{}, bool) {
+func Eval(node ast.Node, env *env.Environment) (interface{}, error) {
 	switch n := node.(type) {
 	case *ast.Literal:
-		return n.Value, true
+		return n.Value, nil
 	case *ast.Grouping:
-		return Eval(n.Expression)
+		return Eval(n.Expression, env)
 	case *ast.Unary:
-		right, ok := Eval(n.Right)
-		if !ok {
-			return right, ok
+		right, err := Eval(n.Right, env)
+		if err != nil {
+			return right, err
 		} else if n.Operator.Type == token.MINUS {
-			msg, ok := checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return -right.(float64), true
+			return -right.(float64), nil
 		} else if n.Operator.Type == token.BANG {
-			return !isTruthy(right), true
+			return !isTruthy(right), nil
 		}
 	case *ast.Binary:
-		left, ok := Eval(n.Left)
-		if !ok {
-			return left, ok
+		left, err := Eval(n.Left, env)
+		if err != nil {
+			return left, err
 		}
-		right, ok := Eval(n.Right)
-		if !ok {
-			return right, ok
+		right, err := Eval(n.Right, env)
+		if err != nil {
+			return right, err
 		}
 		switch n.Operator.Type {
 		case token.MINUS:
-			msg, ok := checkNumberOperand(n.Operator, left, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, left, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			msg, ok = checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err = checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return left.(float64) - right.(float64), true
+			return left.(float64) - right.(float64), nil
 		case token.PLUS:
 			switch lhs := left.(type) {
 			case float64:
 				switch rhs := right.(type) {
 				case float64:
-					return lhs + rhs, true
+					return lhs + rhs, nil
 				}
 			case string:
 				switch rhs := right.(type) {
 				case string:
-					return lhs + rhs, true
+					return lhs + rhs, nil
 				}
 			}
-			return operandsMustBeTwoNumbersOrTwoStrings, false
+			return nil, fmt.Errorf("%s", operandsMustBeTwoNumbersOrTwoStrings)
 		case token.SLASH:
-			msg, ok := checkNumberOperand(n.Operator, left, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, left, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			msg, ok = checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err = checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return left.(float64) / right.(float64), true
+			return left.(float64) / right.(float64), nil
 		case token.STAR:
-			msg, ok := checkNumberOperand(n.Operator, left, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, left, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			msg, ok = checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err = checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return left.(float64) * right.(float64), true
+			return left.(float64) * right.(float64), nil
 		case token.POWER:
-			msg, ok := checkNumberOperand(n.Operator, left, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, left, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			msg, ok = checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err = checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return math.Pow(left.(float64), right.(float64)), true
+			return math.Pow(left.(float64), right.(float64)), nil
 		case token.GREATER:
-			msg, ok := checkNumberOperand(n.Operator, left, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, left, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			msg, ok = checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err = checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return left.(float64) > right.(float64), true
+			return left.(float64) > right.(float64), nil
 		case token.GREATEREQUAL:
-			msg, ok := checkNumberOperand(n.Operator, left, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, left, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			msg, ok = checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err = checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return left.(float64) >= right.(float64), true
+			return left.(float64) >= right.(float64), nil
 		case token.LESS:
-			msg, ok := checkNumberOperand(n.Operator, left, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, left, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			msg, ok = checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err = checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return left.(float64) < right.(float64), true
+			return left.(float64) < right.(float64), nil
 		case token.LESSEQUAL:
-			msg, ok := checkNumberOperand(n.Operator, left, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err := checkNumberOperand(n.Operator, left, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			msg, ok = checkNumberOperand(n.Operator, right, operandMustBeANumber)
-			if !ok {
-				return msg, ok
+			err = checkNumberOperand(n.Operator, right, operandMustBeANumber)
+			if err != nil {
+				return nil, err
 			}
-			return left.(float64) <= right.(float64), true
+			return left.(float64) <= right.(float64), nil
 		case token.BANGEQUAL:
-			return !isEqual(left, right), true
+			return !isEqual(left, right), nil
 		case token.EQUALEQUAL:
-			return isEqual(left, right), true
+			return isEqual(left, right), nil
 		}
 	case *ast.Ternary:
-		cond, ok := Eval(n.Condition)
-		if !ok {
-			return cond, ok
+		cond, err := Eval(n.Condition, env)
+		if err != nil {
+			return cond, err
 		}
 		if isTruthy(cond) {
-			return Eval(n.Then)
+			return Eval(n.Then, env)
 		}
-		return Eval(n.Else)
+		return Eval(n.Else, env)
 	case *ast.Print:
-		value, ok := Eval(n.Expression)
-		if !ok {
-			return value, ok
+		value, err := Eval(n.Expression, env)
+		if err != nil {
+			return value, err
 		}
 		fmt.Println(value)
-		return nil, true
+		return nil, nil
 	case *ast.Expression:
-		r, ok := Eval(n.Expression)
-		if !ok {
-			return r, ok
+		r, err := Eval(n.Expression, env)
+		if err != nil {
+			return r, err
 		}
-		return nil, ok
+		return nil, nil
+	case *ast.Var:
+		if n.Initializer != nil {
+			value, err := Eval(n.Initializer, env)
+			if err != nil {
+				return nil, err
+			}
+			env.Define(n.Name.Lexeme, value)
+		} else {
+			env.Define(n.Name.Lexeme, nil)
+		}
+		return nil, nil
+	case *ast.Variable:
+		return env.Get(n.Name)
 	}
 	panic("Fatal error")
 }
@@ -199,10 +213,10 @@ func isEqual(left interface{}, right interface{}) bool {
 	return left == right
 }
 
-func checkNumberOperand(operator token.Token, value interface{}, msg string) (string, bool) {
+func checkNumberOperand(operator token.Token, value interface{}, msg string) error {
 	switch value.(type) {
 	case int, float64:
-		return "", true
+		return nil
 	}
-	return fmt.Sprintf("%v\n[line %v]", msg, operator.Line), false
+	return fmt.Errorf("%v\n[line %v]", msg, operator.Line)
 }
