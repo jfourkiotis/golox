@@ -285,7 +285,7 @@ func (p *Parser) primary() (ast.Expr, error) {
 		}
 		return &ast.Grouping{Expression: expr}, nil
 	} else if p.match(token.IDENTIFIER) {
-		return ast.Variable{Name: p.previous()}, nil
+		return &ast.Variable{Name: p.previous()}, nil
 	}
 	return nil, parseerror.MakeError(p.peek(), "Expected expression")
 }
