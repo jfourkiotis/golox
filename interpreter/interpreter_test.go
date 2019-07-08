@@ -258,6 +258,40 @@ func TestEnvironment(t *testing.T) {
 	if c, err := env.Get(token.Token{Lexeme: "c"}); err != nil {
 		t.Fatalf("Expected variable 'c' in env")
 	} else if c.(float64) != 50.0 {
-		t.Errorf("Expected c = 15. Got %v", c.(float64))
+		t.Errorf("Expected c = 50. Got %v", c.(float64))
+	}
+}
+
+func TestAssignment(t *testing.T) {
+	input := `
+		var a = 5;
+		var b = 10;
+		var c = a * b;
+		c = 20;
+		b = 200;
+		a = 2000;
+	`
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := parser.New(tokens)
+	statements := parser.Parse()
+
+	env := env.New()
+	Interpret(statements, env)
+
+	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
+		t.Fatalf("Expected variable 'a' in env")
+	} else if a.(float64) != 2000.0 {
+		t.Errorf("Expected a = 2000. Got %v", a.(float64))
+	}
+	if b, err := env.Get(token.Token{Lexeme: "b"}); err != nil {
+		t.Fatalf("Expected variable 'b' in env")
+	} else if b.(float64) != 200.0 {
+		t.Errorf("Expected b = 200. Got %v", b.(float64))
+	}
+	if c, err := env.Get(token.Token{Lexeme: "c"}); err != nil {
+		t.Fatalf("Expected variable 'c' in env")
+	} else if c.(float64) != 20.0 {
+		t.Errorf("Expected c = 20. Got %v", c.(float64))
 	}
 }

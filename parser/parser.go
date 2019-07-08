@@ -16,7 +16,9 @@ stmt       -> exprStmt
 exprStmt   -> expression ";" ;
 printStmt  -> "print" expression ";" ;
 expression -> comma ;
-comma      -> ternary ( "," ternary ) * ;
+comma      -> assignment ( "," assignment ) * ;
+assignment -> IDENTIFIER "=" assignment
+            | ternary ;
 ternary    -> equality "?"  expression ":" expression ;
 equality   -> comparison ( ( "!=" | "==") comparison )* ;
 comparison -> addition ( ( ">" | ">=" | "<" | "<=") addition )*;
@@ -124,20 +126,41 @@ func (p *Parser) expression() (ast.Expr, error) {
 }
 
 func (p *Parser) comma() (ast.Expr, error) {
-	expr, err := p.ternary()
+	expr, err := p.assignment()
 	if err != nil {
 		return nil, err
 	}
 
 	for p.match(",") {
 		operator := p.previous()
-		right, err := p.ternary()
+		right, err := p.assignment()
 		if err != nil {
 			return nil, err
 		}
 		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
 	}
 
+	return expr, nil
+}
+
+func (p *Parser) assignment() (ast.Expr, error) {
+	expr, err := p.ternary()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(token.EQUAL) {
+		equals := p.previous()
+		value, err := p.assignment()
+		if err != nil {
+			return nil, err
+		}
+
+		if variable, ok := expr.(*ast.Variable); ok {
+			return &ast.Assign{Name: variable.Name, Value: value}, nil
+		}
+		return nil, parseerror.MakeError(equals, "Invalid assignment target.")
+	}
 	return expr, nil
 }
 

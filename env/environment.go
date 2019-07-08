@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"golox/runtimeerror"
 	"golox/token"
 )
 
@@ -27,4 +28,13 @@ func (e *Environment) Get(name token.Token) (interface{}, error) {
 		return v, nil
 	}
 	return nil, fmt.Errorf("Undefined variable '%v'", name.Lexeme)
+}
+
+// Assign sets a new value to an old variable
+func (e *Environment) Assign(name token.Token, value interface{}) error {
+	if _, prs := e.values[name.Lexeme]; prs {
+		e.values[name.Lexeme] = value
+		return nil
+	}
+	return runtimeerror.MakeRuntimeError(name, fmt.Sprintf("Undefined variable '%s'.", name.Lexeme))
 }

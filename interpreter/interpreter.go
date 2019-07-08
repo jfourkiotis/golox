@@ -189,6 +189,15 @@ func Eval(node ast.Node, env *env.Environment) (interface{}, error) {
 		return nil, nil
 	case *ast.Variable:
 		return env.Get(n.Name)
+	case *ast.Assign:
+		value, err := Eval(n.Value, env)
+		if err != nil {
+			return nil, err
+		}
+		if err = env.Assign(n.Name, value); err == nil {
+			return value, nil
+		}
+		return nil, err
 	}
 	panic("Fatal error")
 }

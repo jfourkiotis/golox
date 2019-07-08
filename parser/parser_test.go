@@ -264,6 +264,34 @@ func TestParseGroupedExpressions(t *testing.T) {
 	}
 }
 
+func TestParseAssignment(t *testing.T) {
+	numtests := []struct {
+		input            string
+		expectedVariable string
+		expectedValue    float64
+	}{
+		{"a = 5", "a", 5},
+	}
+
+	for _, test := range numtests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		expression, _ := parser.expression()
+
+		assign, ok := expression.(*ast.Assign)
+		if !ok {
+			t.Fatalf("result is not *ast.Assign. Got=%T", expression)
+		}
+
+		if assign.Name.Lexeme != "a" {
+			t.Errorf("Expected variable name to be 'a'. Got=%v", assign.Name.Lexeme)
+		}
+
+		testIntegerLiteral(assign.Value, test.expectedValue, t)
+	}
+}
+
 func TestParseExpressionStatement(t *testing.T) {
 	numtests := []struct {
 		input    string
