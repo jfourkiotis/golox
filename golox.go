@@ -23,7 +23,7 @@ func check(err error) {
 func runFile(file string) {
 	dat, err := ioutil.ReadFile(file)
 	check(err)
-	run(string(dat), env.New())
+	run(string(dat), env.NewGlobal())
 	if parseerror.HadError {
 		os.Exit(65)
 	} else if runtimeerror.HadError {
@@ -33,7 +33,7 @@ func runFile(file string) {
 
 func runPrompt() {
 	reader := bufio.NewReader(os.Stdin)
-	env := env.New()
+	env := env.NewGlobal()
 	for {
 		fmt.Print("> ")
 		dat, err := reader.ReadBytes('\n') // there is also ReadString

@@ -318,6 +318,43 @@ func TestParseExpressionStatement(t *testing.T) {
 	}
 }
 
+func TestParseBlockStatement(t *testing.T) {
+	numtests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"{{print 10;}}", 10},
+	}
+
+	for _, test := range numtests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		stmtList := parser.Parse()
+
+		if len(stmtList) != 1 {
+			t.Fatalf("Expected 1 statement. Got=%v", len(stmtList))
+		}
+
+		block1, ok := stmtList[0].(*ast.Block)
+		if !ok {
+			t.Fatalf("Expected *ast.Block. Got=%T", stmtList[0])
+		}
+
+		block2, ok := block1.Statements[0].(*ast.Block)
+		if !ok {
+			t.Fatalf("Expected *ast.Block. Got=%T", block1.Statements[0])
+		}
+
+		printStmt, ok := block2.Statements[0].(*ast.Print)
+		if !ok {
+			t.Fatalf("Expected *ast.Print. Got=%T", block2.Statements[0])
+		}
+
+		testIntegerLiteral(printStmt.Expression, 10, t)
+	}
+}
+
 func TestParsePrintStatement(t *testing.T) {
 	numtests := []struct {
 		input    string

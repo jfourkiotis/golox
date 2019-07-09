@@ -40,7 +40,7 @@ func TestEvalLiteral(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.New())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -75,7 +75,7 @@ func TestEvalUnary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.New())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -119,7 +119,7 @@ func TestEvalBinary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.New())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -151,7 +151,7 @@ func TestEvalBinaryPrecedence(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.New())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -180,7 +180,7 @@ func TestEvalTernary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.New())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -242,7 +242,7 @@ func TestEnvironment(t *testing.T) {
 	parser := parser.New(tokens)
 	statements := parser.Parse()
 
-	env := env.New()
+	env := env.NewGlobal()
 	Interpret(statements, env)
 
 	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
@@ -262,7 +262,7 @@ func TestEnvironment(t *testing.T) {
 	}
 }
 
-func TestAssignment(t *testing.T) {
+func TestEvalAssignment(t *testing.T) {
 	input := `
 		var a = 5;
 		var b = 10;
@@ -276,7 +276,38 @@ func TestAssignment(t *testing.T) {
 	parser := parser.New(tokens)
 	statements := parser.Parse()
 
-	env := env.New()
+	env := env.NewGlobal()
+	Interpret(statements, env)
+
+	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
+		t.Fatalf("Expected variable 'a' in env")
+	} else if a.(float64) != 2000.0 {
+		t.Errorf("Expected a = 2000. Got %v", a.(float64))
+	}
+	if b, err := env.Get(token.Token{Lexeme: "b"}); err != nil {
+		t.Fatalf("Expected variable 'b' in env")
+	} else if b.(float64) != 200.0 {
+		t.Errorf("Expected b = 200. Got %v", b.(float64))
+	}
+	if c, err := env.Get(token.Token{Lexeme: "c"}); err != nil {
+		t.Fatalf("Expected variable 'c' in env")
+	} else if c.(float64) != 20.0 {
+		t.Errorf("Expected c = 20. Got %v", c.(float64))
+	}
+}
+
+func TestEvalAssignment2(t *testing.T) {
+	input := `
+		{
+			var a = 1
+		}
+	`
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := parser.New(tokens)
+	statements := parser.Parse()
+
+	env := env.NewGlobal()
 	Interpret(statements, env)
 
 	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {

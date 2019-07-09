@@ -9,9 +9,9 @@ type Type string
 const (
 	// single-character tokens
 	LEFTPAREN  = "("
-	RIGHTBRACE = ")"
+	RIGHTPAREN = ")"
 	LEFTBRACE  = "{"
-	RIGHTPAREN = "}"
+	RIGHTBRACE = "}"
 	COMMA      = ","
 	DOT        = "."
 	MINUS      = "-"

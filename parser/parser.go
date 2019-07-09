@@ -13,6 +13,8 @@ declaration -> varDecl
 varDecl    -> "var" IDENTIFIER ( "=" expression )? ";" ;
 stmt       -> exprStmt
 			| printStmt
+			| block
+block      -> "{" declaration* "}"
 exprStmt   -> expression ";" ;
 printStmt  -> "print" expression ";" ;
 expression -> comma ;
@@ -48,6 +50,7 @@ func New(tokens []token.Token) Parser {
 func (p *Parser) Parse() []ast.Stmt {
 	statements := make([]ast.Stmt, 0)
 	for !p.isAtEnd() {
+		// FIXME: p.declaration may return nil
 		statements = append(statements, p.declaration())
 	}
 	return statements
@@ -57,6 +60,7 @@ func (p *Parser) declaration() ast.Stmt {
 	if p.match(token.VAR) {
 		stmt, err := p.varDeclaration()
 		if err != nil {
+			p.synchronize()
 			parseerror.LogError(err)
 			return nil
 		}
@@ -64,6 +68,7 @@ func (p *Parser) declaration() ast.Stmt {
 	}
 	stmt, err := p.statement()
 	if err != nil {
+		p.synchronize()
 		parseerror.LogError(err)
 		return nil
 	}
@@ -93,8 +98,27 @@ func (p *Parser) varDeclaration() (ast.Stmt, error) {
 func (p *Parser) statement() (ast.Stmt, error) {
 	if p.match(token.PRINT) {
 		return p.printStatement()
+	} else if p.match(token.LEFTBRACE) {
+		var err error
+		if statements, err := p.block(); err == nil {
+			return &ast.Block{Statements: statements}, nil
+		}
+		return nil, err
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) block() ([]ast.Stmt, error) {
+	statements := make([]ast.Stmt, 0)
+	for !p.check(token.RIGHTBRACE) && !p.isAtEnd() {
+		stmt := p.declaration()
+		if stmt == nil {
+			return nil, nil // FIXME: should I propagate the declaration error
+		}
+		statements = append(statements, stmt)
+	}
+	p.consume(token.RIGHTBRACE, "Expected '}' after block.")
+	return statements, nil
 }
 
 func (p *Parser) printStatement() (ast.Stmt, error) {
@@ -357,4 +381,18 @@ func (p *Parser) peek() token.Token {
 // peek returns the current token
 func (p *Parser) previous() token.Token {
 	return p.tokens[p.current-1]
+}
+
+func (p *Parser) synchronize() {
+	p.advance()
+	for !p.isAtEnd() {
+		if p.previous().Type == token.SEMICOLON {
+			return
+		}
+		switch p.peek().Type {
+		case token.CLASS, token.FUN, token.VAR, token.FOR, token.IF, token.WHILE, token.PRINT, token.RETURN:
+			return
+		}
+		p.advance()
+	}
 }

@@ -7,6 +7,7 @@ import (
 	"golox/runtimeerror"
 	"golox/token"
 	"math"
+	"os"
 )
 
 const (
@@ -26,14 +27,14 @@ func Interpret(statements []ast.Stmt, env *env.Environment) {
 }
 
 // Eval evaluates the given AST
-func Eval(node ast.Node, env *env.Environment) (interface{}, error) {
+func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 	switch n := node.(type) {
 	case *ast.Literal:
 		return n.Value, nil
 	case *ast.Grouping:
-		return Eval(n.Expression, env)
+		return Eval(n.Expression, environment)
 	case *ast.Unary:
-		right, err := Eval(n.Right, env)
+		right, err := Eval(n.Right, environment)
 		if err != nil {
 			return right, err
 		} else if n.Operator.Type == token.MINUS {
@@ -46,11 +47,11 @@ func Eval(node ast.Node, env *env.Environment) (interface{}, error) {
 			return !isTruthy(right), nil
 		}
 	case *ast.Binary:
-		left, err := Eval(n.Left, env)
+		left, err := Eval(n.Left, environment)
 		if err != nil {
 			return left, err
 		}
-		right, err := Eval(n.Right, env)
+		right, err := Eval(n.Right, environment)
 		if err != nil {
 			return right, err
 		}
@@ -155,50 +156,60 @@ func Eval(node ast.Node, env *env.Environment) (interface{}, error) {
 			return isEqual(left, right), nil
 		}
 	case *ast.Ternary:
-		cond, err := Eval(n.Condition, env)
+		cond, err := Eval(n.Condition, environment)
 		if err != nil {
 			return cond, err
 		}
 		if isTruthy(cond) {
-			return Eval(n.Then, env)
+			return Eval(n.Then, environment)
 		}
-		return Eval(n.Else, env)
+		return Eval(n.Else, environment)
 	case *ast.Print:
-		value, err := Eval(n.Expression, env)
+		value, err := Eval(n.Expression, environment)
 		if err != nil {
 			return value, err
 		}
 		fmt.Println(value)
 		return nil, nil
 	case *ast.Expression:
-		r, err := Eval(n.Expression, env)
+		r, err := Eval(n.Expression, environment)
 		if err != nil {
 			return r, err
 		}
 		return nil, nil
 	case *ast.Var:
 		if n.Initializer != nil {
-			value, err := Eval(n.Initializer, env)
+			value, err := Eval(n.Initializer, environment)
 			if err != nil {
 				return nil, err
 			}
-			env.Define(n.Name.Lexeme, value)
+			environment.Define(n.Name.Lexeme, value)
 		} else {
-			env.Define(n.Name.Lexeme, nil)
+			environment.Define(n.Name.Lexeme, nil)
 		}
 		return nil, nil
 	case *ast.Variable:
-		return env.Get(n.Name)
+		return environment.Get(n.Name)
 	case *ast.Assign:
-		value, err := Eval(n.Value, env)
+		value, err := Eval(n.Value, environment)
 		if err != nil {
 			return nil, err
 		}
-		if err = env.Assign(n.Name, value); err == nil {
+		if err = environment.Assign(n.Name, value); err == nil {
 			return value, nil
 		}
 		return nil, err
+	case *ast.Block:
+		newEnvironment := env.New(environment)
+		for _, stmt := range n.Statements {
+			_, err := Eval(stmt, newEnvironment)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, nil
 	}
+	fmt.Fprintf(os.Stderr, "%T\n", node)
 	panic("Fatal error")
 }
 
