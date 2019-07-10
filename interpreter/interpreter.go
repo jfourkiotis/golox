@@ -7,7 +7,6 @@ import (
 	"golox/runtimeerror"
 	"golox/token"
 	"math"
-	"os"
 )
 
 const (
@@ -208,8 +207,17 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 			}
 		}
 		return nil, nil
+	case *ast.If:
+		var err error
+		if condValue, err := Eval(n.Condition, environment); err == nil {
+			if isTruthy(condValue) {
+				return Eval(n.ThenBranch, environment)
+			} else if n.ElseBranch != nil {
+				return Eval(n.ElseBranch, environment)
+			}
+		}
+		return nil, err
 	}
-	fmt.Fprintf(os.Stderr, "%T\n", node)
 	panic("Fatal error")
 }
 

@@ -296,3 +296,27 @@ func TestEvalAssignment(t *testing.T) {
 		t.Errorf("Expected c = 20. Got %v", c.(float64))
 	}
 }
+
+func TestEvalIfStatement(t *testing.T) {
+	input := `
+	var a = 5;
+	if (a > 5) {
+		print "yes";
+	}
+	else { 
+		print "no";
+	}
+	`
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := parser.New(tokens)
+	statements := parser.Parse()
+
+	env := env.NewGlobal()
+	for _, stmt := range statements {
+		_, err := Eval(stmt, env)
+		if err != nil {
+			t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
+		}
+	}
+}

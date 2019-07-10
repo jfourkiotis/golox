@@ -381,6 +381,35 @@ func TestParsePrintStatement(t *testing.T) {
 	}
 }
 
+func TestParseIfStatement(t *testing.T) {
+	input := "if (x < 5) {print \"yes\";} else {print \"no\";}"
+
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := New(tokens)
+	stmtList := parser.Parse()
+
+	if len(stmtList) != 1 {
+		t.Fatalf("Expected 1 statement. Got=%v", len(stmtList))
+	}
+
+	ifStmt, ok := stmtList[0].(*ast.If)
+	if !ok {
+		t.Fatalf("Expected *ast.If. Got=%T", stmtList[0])
+	}
+
+	if _, ok := ifStmt.Condition.(*ast.Binary); !ok {
+		t.Fatalf("Expected *ast.Binary. Got=%T", ifStmt.Condition)
+	}
+
+	if _, ok := ifStmt.ThenBranch.(*ast.Block); !ok {
+		t.Fatalf("Expected *ast.Block. Got=%T", ifStmt.ThenBranch)
+	}
+	if _, ok := ifStmt.ElseBranch.(*ast.Block); !ok {
+		t.Fatalf("Expected *ast.Block. Got=%T", ifStmt.ElseBranch)
+	}
+}
+
 func TestParseUnaryPowerExpressions(t *testing.T) {
 	input1 := "-5**2"
 

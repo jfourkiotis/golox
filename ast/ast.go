@@ -98,3 +98,11 @@ type Var struct {
 	Name        token.Token
 	Initializer Expr
 }
+
+// If is the classic if statement
+type If struct {
+	Stmt
+	Condition  Expr
+	ThenBranch Stmt
+	ElseBranch Stmt
+}

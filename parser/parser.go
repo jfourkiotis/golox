@@ -12,6 +12,7 @@ declaration -> varDecl
 			| stmt
 varDecl    -> "var" IDENTIFIER ( "=" expression )? ";" ;
 stmt       -> exprStmt
+            | ifStmt
 			| printStmt
 			| block
 block      -> "{" declaration* "}"
@@ -96,7 +97,9 @@ func (p *Parser) varDeclaration() (ast.Stmt, error) {
 }
 
 func (p *Parser) statement() (ast.Stmt, error) {
-	if p.match(token.PRINT) {
+	if p.match(token.IF) {
+		return p.ifStatement()
+	} else if p.match(token.PRINT) {
 		return p.printStatement()
 	} else if p.match(token.LEFTBRACE) {
 		var err error
@@ -106,6 +109,28 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return nil, err
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) ifStatement() (ast.Stmt, error) {
+	var err error
+	if _, err := p.consume(token.LEFTPAREN, "Expected '(' after 'if'."); err != nil {
+		return nil, err
+	}
+
+	if condition, err := p.expression(); err == nil {
+		if _, err := p.consume(token.RIGHTPAREN, "Expected ')' after 'if' condition."); err == nil {
+			if thenBranch, err := p.statement(); err == nil {
+				if p.match(token.ELSE) {
+					if elseBranch, err := p.statement(); err == nil {
+						return &ast.If{Condition: condition, ThenBranch: thenBranch, ElseBranch: elseBranch}, nil
+					}
+				} else {
+					return &ast.If{Condition: condition, ThenBranch: thenBranch}, nil
+				}
+			}
+		}
+	}
+	return nil, err
 }
 
 func (p *Parser) block() ([]ast.Stmt, error) {
