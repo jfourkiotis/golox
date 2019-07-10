@@ -185,7 +185,7 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 			}
 			environment.Define(n.Name.Lexeme, value)
 		} else {
-			environment.Define(n.Name.Lexeme, nil)
+			environment.DefineUnitialized(n.Name.Lexeme)
 		}
 		return nil, nil
 	case *ast.Variable:
