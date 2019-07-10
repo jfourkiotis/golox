@@ -307,7 +307,7 @@ func (p *Parser) power() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &ast.Binary{Left: expr, Operator: operator, Right: right}, nil
+		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
 	}
 	return expr, nil
 }

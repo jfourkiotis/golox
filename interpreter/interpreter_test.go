@@ -102,6 +102,7 @@ func TestEvalBinary(t *testing.T) {
 		{"nil != nil;", false},
 		{"nil == 5;", false},
 		{"5.2 == 5.2;", true},
+		{"1.2 ** 3.4 ** 0.5 ** 0.9;", math.Pow(1.2, math.Pow(3.4, math.Pow(0.5, 0.9)))},
 	}
 
 	for _, test := range tests {
