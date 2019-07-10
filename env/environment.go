@@ -6,6 +6,10 @@ import (
 	"golox/token"
 )
 
+type uninitialized struct{}
+
+var needsInitialization = &uninitialized{}
+
 // Environment associates variables to values
 type Environment struct {
 	values    map[string]interface{}
@@ -27,10 +31,19 @@ func (e *Environment) Define(name string, value interface{}) {
 	e.values[name] = value
 }
 
+// DefineUnitialized creates a new variable. That variable must be initialized before
+// used
+func (e *Environment) DefineUnitialized(name string) {
+	e.values[name] = needsInitialization
+}
+
 // Get lookups a variable given a token.Token
 func (e *Environment) Get(name token.Token) (interface{}, error) {
 	v, prs := e.values[name.Lexeme]
 	if prs {
+		if v == needsInitialization {
+			return nil, fmt.Errorf("Uninitialized variable access: '%s'", name.Lexeme)
+		}
 		return v, nil
 	}
 	if e.enclosing != nil {
