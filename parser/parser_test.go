@@ -6,6 +6,12 @@ import (
 	"testing"
 )
 
+func testExpectStatementsLen(statements []ast.Stmt, length int, t *testing.T) {
+	if len(statements) != length {
+		t.Fatalf("Expected %d statements. Got=%d", length, len(statements))
+	}
+}
+
 func testIntegerLiteral(expression ast.Expr, expected float64, t *testing.T) {
 	literal, ok := expression.(*ast.Literal)
 	if !ok {
@@ -264,6 +270,43 @@ func TestParseGroupedExpressions(t *testing.T) {
 	}
 }
 
+func TestParseVarDeclaration(t *testing.T) {
+	numtests := []struct {
+		input         string
+		expectedName  string
+		expectedValue interface{}
+	}{
+		{"var a = 5.0;", "a", 5.0},
+		{"var b;", "b", nil},
+	}
+
+	for _, test := range numtests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := New(tokens)
+		statements := parser.Parse()
+
+		testExpectStatementsLen(statements, 1, t)
+
+		decl, ok := statements[0].(*ast.Var)
+		if !ok {
+			t.Fatalf("Expected *ast.Var. Got=%T", statements[0])
+		}
+
+		if decl.Name.Lexeme != test.expectedName {
+			t.Errorf("Expected variable name to be '%s'. Got=%v", test.expectedName, decl.Name.Lexeme)
+		}
+
+		if test.expectedValue == nil {
+			if decl.Initializer != nil {
+				t.Errorf("Expected nil initializer. Got=%v", decl.Initializer)
+			}
+		} else {
+			testIntegerLiteral(decl.Initializer, test.expectedValue.(float64), t)
+		}
+	}
+}
+
 func TestParseAssignment(t *testing.T) {
 	numtests := []struct {
 		input            string
@@ -306,9 +349,7 @@ func TestParseExpressionStatement(t *testing.T) {
 		parser := New(tokens)
 		stmtList := parser.Parse()
 
-		if len(stmtList) != 1 {
-			t.Fatalf("Expected 1 statement. Got=%v", len(stmtList))
-		}
+		testExpectStatementsLen(stmtList, 1, t)
 
 		exprStmt, ok := stmtList[0].(*ast.Expression)
 		if !ok {
@@ -332,9 +373,7 @@ func TestParseBlockStatement(t *testing.T) {
 		parser := New(tokens)
 		stmtList := parser.Parse()
 
-		if len(stmtList) != 1 {
-			t.Fatalf("Expected 1 statement. Got=%v", len(stmtList))
-		}
+		testExpectStatementsLen(stmtList, 1, t)
 
 		block1, ok := stmtList[0].(*ast.Block)
 		if !ok {
@@ -369,9 +408,7 @@ func TestParsePrintStatement(t *testing.T) {
 		parser := New(tokens)
 		stmtList := parser.Parse()
 
-		if len(stmtList) != 1 {
-			t.Fatalf("Expected 1 statement. Got=%v", len(stmtList))
-		}
+		testExpectStatementsLen(stmtList, 1, t)
 
 		printStmt, ok := stmtList[0].(*ast.Print)
 		if !ok {
@@ -381,17 +418,37 @@ func TestParsePrintStatement(t *testing.T) {
 	}
 }
 
-func TestParseIfStatement(t *testing.T) {
-	input := "if (x < 5) {print \"yes\";} else {print \"no\";}"
+func TestErrorSynchronization(t *testing.T) {
+	input := `
+	var a = 5;
+	{
+		var b = 10
+	}
+	print a;
+	`
 
 	scanner := scanner.New(input)
 	tokens := scanner.ScanTokens()
 	parser := New(tokens)
 	stmtList := parser.Parse()
 
-	if len(stmtList) != 1 {
-		t.Fatalf("Expected 1 statement. Got=%v", len(stmtList))
+	testExpectStatementsLen(stmtList, 3, t)
+
+	_, ok := stmtList[2].(*ast.Print)
+	if !ok {
+		t.Fatalf("Expected *ast.Print. Got=%T", stmtList[2])
 	}
+}
+
+func TestParseIfStatement(t *testing.T) {
+	input := "if (x < 5) {print \"yes\";} else {print \"no\";}"
+
+	s := scanner.New(input)
+	tokens := s.ScanTokens()
+	p := New(tokens)
+	stmtList := p.Parse()
+
+	testExpectStatementsLen(stmtList, 1, t)
 
 	ifStmt, ok := stmtList[0].(*ast.If)
 	if !ok {
@@ -407,6 +464,31 @@ func TestParseIfStatement(t *testing.T) {
 	}
 	if _, ok := ifStmt.ElseBranch.(*ast.Block); !ok {
 		t.Fatalf("Expected *ast.Block. Got=%T", ifStmt.ElseBranch)
+	}
+
+	input = "if (x < 5) {print \"yes\";}"
+	s = scanner.New(input)
+	tokens = s.ScanTokens()
+	p = New(tokens)
+	stmtList = p.Parse()
+
+	testExpectStatementsLen(stmtList, 1, t)
+
+	ifStmt, ok = stmtList[0].(*ast.If)
+	if !ok {
+		t.Fatalf("Expected *ast.If. Got=%T", stmtList[0])
+	}
+
+	if _, ok := ifStmt.Condition.(*ast.Binary); !ok {
+		t.Fatalf("Expected *ast.Binary. Got=%T", ifStmt.Condition)
+	}
+
+	if _, ok := ifStmt.ThenBranch.(*ast.Block); !ok {
+		t.Fatalf("Expected *ast.Block. Got=%T", ifStmt.ThenBranch)
+	}
+
+	if ifStmt.ElseBranch != nil {
+		t.Fatalf("Expected nil Else statement. Got=%T", ifStmt.ElseBranch)
 	}
 }
 
