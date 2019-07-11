@@ -224,7 +224,9 @@ func (p *Parser) ternary() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		p.match(":") // TODO: error handling
+		if _, err := p.consume(token.COLON, "Expected ':' in ternary operator."); err != nil {
+			return nil, err
+		}
 		colon := p.previous()
 		elseClause, err := p.expression()
 		if err != nil {
