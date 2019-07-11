@@ -6,13 +6,22 @@ import (
 	"golox/env"
 	"golox/runtimeerror"
 	"golox/token"
+	"io"
 	"math"
+	"os"
 )
 
 const (
 	operandMustBeANumber                 = "Operand must be a number"
 	operandsMustBeTwoNumbersOrTwoStrings = "Operands must be two numbers or two strings"
 )
+
+// Options contains customization points for the interpreter behavior
+type Options struct {
+	Writer io.Writer
+}
+
+var options = &Options{Writer: os.Stdout}
 
 // Interpret tries to calculate the result of an expression, or print a message
 // if an error occurs
@@ -168,7 +177,7 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 		if err != nil {
 			return value, err
 		}
-		fmt.Println(value)
+		fmt.Fprintln(options.Writer, value)
 		return nil, nil
 	case *ast.Expression:
 		r, err := Eval(n.Expression, environment)

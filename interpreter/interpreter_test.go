@@ -7,6 +7,7 @@ import (
 	"golox/scanner"
 	"golox/token"
 	"math"
+	"strings"
 	"testing"
 )
 
@@ -298,25 +299,47 @@ func TestEvalAssignment(t *testing.T) {
 }
 
 func TestEvalIfStatement(t *testing.T) {
-	input := `
-	var a = 5;
-	if (a > 5) {
-		print "yes";
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{
+			`
+				var a = 5;
+				if (a > 5) {
+					print "yes";
+				} else {
+					print "no";
+				}
+			`, "no"},
+		{
+			`
+				var a = 10;
+				if (a > 5) {
+					print "yes";
+				}
+			`, "yes"},
 	}
-	else { 
-		print "no";
-	}
-	`
-	scanner := scanner.New(input)
-	tokens := scanner.ScanTokens()
-	parser := parser.New(tokens)
-	statements := parser.Parse()
 
-	env := env.NewGlobal()
-	for _, stmt := range statements {
-		_, err := Eval(stmt, env)
-		if err != nil {
-			t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
+	for _, test := range tests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := parser.New(tokens)
+		statements := parser.Parse()
+
+		out := &strings.Builder{}
+		options.Writer = out
+		env := env.NewGlobal()
+		for _, stmt := range statements {
+			_, err := Eval(stmt, env)
+			if err != nil {
+				t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
+			}
+		}
+
+		outStr := strings.TrimSuffix(out.String(), "\n")
+		if outStr != test.expectedOutput {
+			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
 		}
 	}
 }
