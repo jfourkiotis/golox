@@ -226,6 +226,21 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 			}
 		}
 		return nil, err
+	case *ast.Logical:
+		left, err := Eval(n.Left, environment)
+		if err != nil {
+			return nil, err
+		}
+		if n.Operator.Type == token.OR {
+			if isTruthy(left) {
+				return left, nil
+			}
+		} else if n.Operator.Type == token.AND {
+			if !isTruthy(left) {
+				return left, nil
+			}
+		}
+		return Eval(n.Right, environment)
 	}
 	panic("Fatal error")
 }

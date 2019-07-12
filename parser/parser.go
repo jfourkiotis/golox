@@ -21,7 +21,9 @@ printStmt  -> "print" expression ";" ;
 expression -> comma ;
 comma      -> assignment ( "," assignment ) * ;
 assignment -> IDENTIFIER "=" assignment
-            | ternary ;
+			| logic_or ;
+logic_or   -> logic_and ( "or" logic_and )* ;
+logic_and  -> ternary ( "and" ternary ) * ;
 ternary    -> equality "?"  expression ":" expression ;
 equality   -> comparison ( ( "!=" | "==") comparison )* ;
 comparison -> addition ( ( ">" | ">=" | "<" | "<=") addition )*;
@@ -193,7 +195,7 @@ func (p *Parser) comma() (ast.Expr, error) {
 }
 
 func (p *Parser) assignment() (ast.Expr, error) {
-	expr, err := p.ternary()
+	expr, err := p.or()
 	if err != nil {
 		return nil, err
 	}
@@ -209,6 +211,39 @@ func (p *Parser) assignment() (ast.Expr, error) {
 			return &ast.Assign{Name: variable.Name, Value: value}, nil
 		}
 		return nil, parseerror.MakeError(equals, "Invalid assignment target.")
+	}
+	return expr, nil
+}
+
+func (p *Parser) or() (ast.Expr, error) {
+	expr, err := p.and()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.OR) {
+		operator := p.previous()
+		right, err := p.and()
+		if err != nil {
+			return nil, err
+		}
+		expr = &ast.Logical{Left: expr, Operator: operator, Right: right}
+	}
+	return expr, nil
+}
+
+func (p *Parser) and() (ast.Expr, error) {
+	expr, err := p.ternary()
+	if err != nil {
+		return nil, err
+	}
+	for p.match(token.AND) {
+		operator := p.previous()
+		right, err := p.ternary()
+		if err != nil {
+			return nil, err
+		}
+		expr = &ast.Logical{Left: expr, Operator: operator, Right: right}
 	}
 	return expr, nil
 }
