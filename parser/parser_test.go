@@ -3,6 +3,7 @@ package parser
 import (
 	"golox/ast"
 	"golox/scanner"
+	"golox/token"
 	"testing"
 )
 
@@ -438,6 +439,52 @@ func TestErrorSynchronization(t *testing.T) {
 	if !ok {
 		t.Fatalf("Expected *ast.Print. Got=%T", stmtList[2])
 	}
+}
+
+func TestParseLogicalOperators(t *testing.T) {
+	tests := []struct {
+		input       string
+		expectedAST ast.Node
+	}{
+		{"true or 1;", &ast.Expression{
+			Expression: &ast.Logical{
+				Left:     &ast.Literal{Value: true},
+				Operator: token.Token{Lexeme: "or"},
+				Right:    &ast.Literal{Value: 1}}}},
+		{"false or 1 or \"hello\";", &ast.Expression{
+			Expression: &ast.Logical{
+				Left: &ast.Logical{
+					Left:     &ast.Literal{Value: false},
+					Operator: token.Token{Lexeme: "or"},
+					Right:    &ast.Literal{Value: 1}},
+				Operator: token.Token{Lexeme: "or"},
+				Right:    &ast.Literal{Value: "hello"}}}},
+		{"1 and 2 or 10 and 4;", &ast.Expression{
+			Expression: &ast.Logical{
+				Left: &ast.Logical{
+					Left:     &ast.Literal{Value: 1},
+					Operator: token.Token{Lexeme: "and"},
+					Right:    &ast.Literal{Value: 2}},
+				Operator: token.Token{Lexeme: "or"},
+				Right: &ast.Logical{
+					Left:     &ast.Literal{Value: 10},
+					Operator: token.Token{Lexeme: "and"},
+					Right:    &ast.Literal{Value: 4}}}}},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := New(tokens)
+		statements := p.Parse()
+
+		testExpectStatementsLen(statements, 1, t)
+
+		if statements[0].ToString() != test.expectedAST.ToString() {
+			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].ToString(), test.expectedAST.ToString())
+		}
+	}
+
 }
 
 func TestParseIfStatement(t *testing.T) {
