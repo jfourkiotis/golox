@@ -15,9 +15,11 @@ stmt       -> exprStmt
             | ifStmt
 			| printStmt
 			| whileStmt
+			| forStmt
 			| block
 ifStmt     -> "if" "(" expression ")" statement ( "else " statement )? ;
 whileStmt  -> "while" "(" expression ")" statement ;
+forStmt    -> "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 block      -> "{" declaration* "}"
 exprStmt   -> expression ";" ;
 printStmt  -> "print" expression ";" ;
@@ -106,6 +108,8 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.ifStatement()
 	} else if p.match(token.WHILE) {
 		return p.whileStatement()
+	} else if p.match(token.FOR) {
+		return p.forStatement()
 	} else if p.match(token.PRINT) {
 		return p.printStatement()
 	} else if p.match(token.LEFTBRACE) {
@@ -116,6 +120,80 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return nil, err
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) forStatement() (ast.Stmt, error) {
+	_, err := p.consume(token.LEFTPAREN, "Expected '(' after 'for'.")
+	if err != nil {
+		return nil, err
+	}
+
+	// first clause (initializer)
+	var initializer ast.Stmt
+	if p.match(token.SEMICOLON) {
+		initializer = nil
+	} else if p.match(token.VAR) {
+		initializer, err = p.varDeclaration()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		initializer, err = p.expressionStatement()
+		if err != nil {
+			return nil, err
+		}
+	}
+	// condition
+	var condition ast.Expr
+	if !p.check(token.SEMICOLON) {
+		condition, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = p.consume(token.SEMICOLON, "Expect ';' after loop condition.")
+	if err != nil {
+		return nil, err
+	}
+	// increment
+	var increment ast.Expr
+	if !p.check(token.RIGHTPAREN) {
+		increment, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = p.consume(token.RIGHTPAREN, "Expected ')' after for clauses.")
+	if err != nil {
+		return nil, err
+	}
+	// for-loop body
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+	// desugaring to a while-loop
+	if increment != nil {
+		statements := make([]ast.Stmt, 0)
+		statements = append(statements, body)
+		statements = append(statements, increment)
+		body = &ast.Block{Statements: statements}
+	}
+
+	if condition == nil {
+		condition = &ast.Literal{Value: true}
+	}
+	body = &ast.While{Condition: condition, Statement: body}
+
+	if initializer != nil {
+		statements := make([]ast.Stmt, 0)
+		statements = append(statements, initializer)
+		statements = append(statements, body)
+		body = &ast.Block{Statements: statements}
+	}
+
+	return body, nil
 }
 
 func (p *Parser) whileStatement() (ast.Stmt, error) {

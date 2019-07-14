@@ -499,6 +499,28 @@ func TestParseWhileStatement(t *testing.T) {
 				Right:    &ast.Literal{Value: 5}},
 			Statement: &ast.Print{
 				Expression: &ast.Variable{Name: token.Token{Lexeme: "i"}}}}},
+		{"for (i = 0; i != 5; i=i+1) print i;", &ast.Block{
+			Statements: []ast.Stmt{
+				&ast.Expression{
+					Expression: &ast.Assign{
+						Name:  token.Token{Lexeme: "i"},
+						Value: &ast.Literal{Value: 0}}},
+				&ast.While{
+					Condition: &ast.Binary{
+						Left:     &ast.Variable{Name: token.Token{Lexeme: "i"}},
+						Operator: token.Token{Lexeme: "!="},
+						Right:    &ast.Literal{Value: 5}},
+					Statement: &ast.Block{
+						Statements: []ast.Stmt{
+							&ast.Print{
+								Expression: &ast.Variable{Name: token.Token{Lexeme: "i"}}},
+							&ast.Assign{
+								Name: token.Token{Lexeme: "i"},
+								Value: &ast.Binary{
+									Left:     &ast.Variable{Name: token.Token{Lexeme: "i"}},
+									Operator: token.Token{Lexeme: "+"},
+									Right:    &ast.Literal{Value: 1}}},
+						}}}}}},
 	}
 
 	for _, test := range tests {

@@ -313,6 +313,15 @@ func TestEvalWhileStatement(t *testing.T) {
 				} 
 				print b;
 			`, "5"},
+		{
+			`
+				var a = 5;
+				var b = 0;
+				for( ; a > 0; a=a-1) {
+					b = b + 1;
+				} 
+				print b;
+			`, "5"},
 	}
 
 	for _, test := range tests {
