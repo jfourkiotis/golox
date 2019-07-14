@@ -298,6 +298,46 @@ func TestEvalAssignment(t *testing.T) {
 	}
 }
 
+func TestEvalWhileStatement(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{
+			`
+				var a = 5;
+				var b = 0;
+				while (a > 0) {
+					a = a - 1;
+					b = b + 1;
+				} 
+				print b;
+			`, "5"},
+	}
+
+	for _, test := range tests {
+		scanner := scanner.New(test.input)
+		tokens := scanner.ScanTokens()
+		parser := parser.New(tokens)
+		statements := parser.Parse()
+
+		out := &strings.Builder{}
+		options.Writer = out
+		env := env.NewGlobal()
+		for _, stmt := range statements {
+			_, err := Eval(stmt, env)
+			if err != nil {
+				t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
+			}
+		}
+
+		outStr := strings.TrimSuffix(out.String(), "\n")
+		if outStr != test.expectedOutput {
+			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
+		}
+	}
+}
+
 func TestEvalIfStatement(t *testing.T) {
 	tests := []struct {
 		input          string

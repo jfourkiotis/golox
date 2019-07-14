@@ -14,7 +14,10 @@ varDecl    -> "var" IDENTIFIER ( "=" expression )? ";" ;
 stmt       -> exprStmt
             | ifStmt
 			| printStmt
+			| whileStmt
 			| block
+ifStmt     -> "if" "(" expression ")" statement ( "else " statement )? ;
+whileStmt  -> "while" "(" expression ")" statement ;
 block      -> "{" declaration* "}"
 exprStmt   -> expression ";" ;
 printStmt  -> "print" expression ";" ;
@@ -101,6 +104,8 @@ func (p *Parser) varDeclaration() (ast.Stmt, error) {
 func (p *Parser) statement() (ast.Stmt, error) {
 	if p.match(token.IF) {
 		return p.ifStatement()
+	} else if p.match(token.WHILE) {
+		return p.whileStatement()
 	} else if p.match(token.PRINT) {
 		return p.printStatement()
 	} else if p.match(token.LEFTBRACE) {
@@ -111,6 +116,26 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return nil, err
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) whileStatement() (ast.Stmt, error) {
+	_, err := p.consume(token.LEFTPAREN, "Expected '(' after 'while'.")
+	if err != nil {
+		return nil, err
+	}
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(token.RIGHTPAREN, "Expected ')' after condition.")
+	if err != nil {
+		return nil, err
+	}
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+	return &ast.While{Condition: condition, Statement: body}, nil
 }
 
 func (p *Parser) ifStatement() (ast.Stmt, error) {

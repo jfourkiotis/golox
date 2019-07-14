@@ -226,6 +226,21 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 			}
 		}
 		return nil, err
+	case *ast.While:
+		for {
+			condition, err := Eval(n.Condition, environment)
+			if err != nil {
+				return nil, err
+			}
+			if !isTruthy(condition) {
+				break
+			}
+			_, err = Eval(n.Statement, environment)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, nil
 	case *ast.Logical:
 		left, err := Eval(n.Left, environment)
 		if err != nil {

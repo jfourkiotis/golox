@@ -487,6 +487,33 @@ func TestParseLogicalOperators(t *testing.T) {
 
 }
 
+func TestParseWhileStatement(t *testing.T) {
+	tests := []struct {
+		input       string
+		expectedAST ast.Node
+	}{
+		{"while (i < 5) print i;", &ast.While{
+			Condition: &ast.Binary{
+				Left:     &ast.Variable{Name: token.Token{Lexeme: "i"}},
+				Operator: token.Token{Lexeme: "<"},
+				Right:    &ast.Literal{Value: 5}},
+			Statement: &ast.Print{
+				Expression: &ast.Variable{Name: token.Token{Lexeme: "i"}}}}},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := New(tokens)
+		statements := p.Parse()
+
+		testExpectStatementsLen(statements, 1, t)
+		if statements[0].ToString() != test.expectedAST.ToString() {
+			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].ToString(), test.expectedAST.ToString())
+		}
+	}
+}
+
 func TestParseIfStatement(t *testing.T) {
 	input := "if (x < 5) {print \"yes\";} else {print \"no\";}"
 

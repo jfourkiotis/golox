@@ -161,6 +161,7 @@ type Block struct {
 	Statements []Stmt
 }
 
+// ToString pretty prints the block statement
 func (b *Block) ToString() string {
 	var sb strings.Builder
 	sb.WriteString("(")
@@ -177,6 +178,7 @@ type Expression struct {
 	Expression Expr
 }
 
+// ToString pretty prints the expression statement
 func (e *Expression) ToString() string {
 	var sb strings.Builder
 	sb.WriteString("(")
@@ -192,6 +194,7 @@ type Print struct {
 	Expression Expr
 }
 
+// ToString pretty prints the print statement
 func (p *Print) ToString() string {
 	var sb strings.Builder
 	sb.WriteString("(")
@@ -210,6 +213,7 @@ type Var struct {
 	Initializer Expr
 }
 
+// ToString pretty prints the var declaration
 func (v *Var) ToString() string {
 	var sb strings.Builder
 	sb.WriteString("(")
@@ -234,6 +238,7 @@ type If struct {
 	ElseBranch Stmt
 }
 
+// ToString pretty prints the if statement
 func (i *If) ToString() string {
 	var sb strings.Builder
 	sb.WriteString("(")
@@ -244,6 +249,26 @@ func (i *If) ToString() string {
 	sb.WriteString(i.ThenBranch.ToString())
 	sb.WriteString(" ")
 	sb.WriteString(i.ElseBranch.ToString())
+	sb.WriteString(")")
+	return sb.String()
+}
+
+// While is the classic while statement
+type While struct {
+	Stmt
+	Condition Expr
+	Statement Stmt
+}
+
+// ToString pretty prints the while statement
+func (w *While) ToString() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString("while")
+	sb.WriteString(" ")
+	sb.WriteString(w.Condition.ToString())
+	sb.WriteString(" ")
+	sb.WriteString(w.Statement.ToString())
 	sb.WriteString(")")
 	return sb.String()
 }
