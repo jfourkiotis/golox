@@ -256,6 +256,31 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 			}
 		}
 		return Eval(n.Right, environment)
+	case *ast.Call:
+		callee, err := Eval(n.Callee, environment)
+		if err != nil {
+			return nil, err
+		}
+
+		args := make([]interface{}, 0)
+		for _, arg := range n.Arguments {
+			a, err := Eval(arg, environment)
+			if err != nil {
+				args = append(args, a)
+			}
+		}
+
+		function, ok := callee.(*loxFunction)
+
+		if !ok {
+			return nil, runtimeerror.MakeRuntimeError(n.Paren, "Can only call functions and classes.")
+		}
+
+		if function.arity != len(args) {
+			return nil, runtimeerror.MakeRuntimeError(n.Paren, fmt.Sprintf("Expected %d arguments but got %d.", function.arity, len(args)))
+		}
+
+		return function.callable(args)
 	}
 	panic("Fatal error")
 }

@@ -244,7 +244,7 @@ func TestEnvironment(t *testing.T) {
 	parser := parser.New(tokens)
 	statements := parser.Parse()
 
-	env := env.NewGlobal()
+	env := GlobalEnv
 	Interpret(statements, env)
 
 	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
@@ -344,6 +344,29 @@ func TestEvalWhileStatement(t *testing.T) {
 		if outStr != test.expectedOutput {
 			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
 		}
+	}
+}
+
+func TestEvalGlobals(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{"clock();"},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := parser.New(tokens)
+		statements := p.Parse()
+
+		e, _ := statements[0].(*ast.Expression)
+		v, _ := Eval(e.Expression, GlobalEnv)
+
+		if v.(int) < 0 || v.(int) > 59 {
+			t.Errorf("Expected a number in [0, 59]")
+		}
+
 	}
 }
 

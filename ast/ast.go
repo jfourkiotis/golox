@@ -293,3 +293,26 @@ func (l *Logical) ToString() string {
 	sb.WriteString(")")
 	return sb.String()
 }
+
+// Call is the node of a function call
+type Call struct {
+	Callee    Expr
+	Paren     token.Token
+	Arguments []Expr
+}
+
+// ToString pretty prints the call operator
+func (c *Call) ToString() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString("call")
+	sb.WriteString(" ")
+	sb.WriteString(c.Callee.ToString())
+	sb.WriteString(" ")
+	for _, e := range c.Arguments {
+		sb.WriteString(e.ToString())
+		sb.WriteString(" ")
+	}
+	sb.WriteString(")")
+	return sb.String()
+}

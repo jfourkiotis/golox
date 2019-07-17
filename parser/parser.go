@@ -34,9 +34,11 @@ equality   -> comparison ( ( "!=" | "==") comparison )* ;
 comparison -> addition ( ( ">" | ">=" | "<" | "<=") addition )*;
 addition   -> multiplication ( ( "+" | "-" ) multiplication )*;
 multiplication -> unary ( ( "/" | "*" ) unary )*;
-unary      -> ( "!" | "-" ) unary
+unary      -> ( "!" | "-" ) unary;
 			| power ;
-power      -> primary ( "**" unary ) *
+power      -> call ( "**" unary ) *
+call       -> primary ( "(" arguments? ")" )* ;
+arguments  -> expression ( "," expression )* ;
 primary    -> NUMBER | STRING | "false" | "true" | "nil"
 			| "(" expression ")"
 			| IDENTIFIER ;
@@ -461,7 +463,7 @@ func (p *Parser) unary() (ast.Expr, error) {
 }
 
 func (p *Parser) power() (ast.Expr, error) {
-	expr, err := p.primary()
+	expr, err := p.call()
 	if err != nil {
 		return nil, err
 	}
@@ -475,6 +477,51 @@ func (p *Parser) power() (ast.Expr, error) {
 		expr = &ast.Binary{Left: expr, Operator: operator, Right: right}
 	}
 	return expr, nil
+}
+
+func (p *Parser) call() (ast.Expr, error) {
+	expr, err := p.primary()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		if p.match(token.LEFTPAREN) {
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			break
+		}
+	}
+	return expr, nil
+}
+
+func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
+	args := make([]ast.Expr, 0)
+	if !p.check(token.RIGHTPAREN) {
+		for {
+			arg, err := p.assignment() // we don't want the comma operator here
+			if err != nil {
+				return nil, err
+			}
+			if len(args) >= 8 {
+				return nil, parseerror.MakeError(p.peek(), "Cannot have more than 8 arguments.")
+			}
+			args = append(args, arg)
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	paren, err := p.consume(token.RIGHTPAREN, "Expected ')' after arguments.")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Call{Callee: callee, Paren: paren, Arguments: args}, nil
 }
 
 func (p *Parser) primary() (ast.Expr, error) {

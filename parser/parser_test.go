@@ -441,6 +441,41 @@ func TestErrorSynchronization(t *testing.T) {
 	}
 }
 
+func TestParseCallExpression(t *testing.T) {
+	tests := []struct {
+		input       string
+		expectedAST ast.Node
+	}{
+		{"f();", &ast.Expression{
+			Expression: &ast.Call{
+				Callee:    &ast.Variable{Name: token.Token{Lexeme: "f"}},
+				Paren:     token.Token{Lexeme: ")"},
+				Arguments: make([]ast.Expr, 0)}}},
+		{"f(a, b, c);", &ast.Expression{
+			Expression: &ast.Call{
+				Callee: &ast.Variable{Name: token.Token{Lexeme: "f"}},
+				Paren:  token.Token{Lexeme: ")"},
+				Arguments: []ast.Expr{
+					&ast.Variable{Name: token.Token{Lexeme: "a"}},
+					&ast.Variable{Name: token.Token{Lexeme: "b"}},
+					&ast.Variable{Name: token.Token{Lexeme: "c"}},
+				}}}},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := New(tokens)
+		statements := p.Parse()
+
+		testExpectStatementsLen(statements, 1, t)
+
+		if statements[0].ToString() != test.expectedAST.ToString() {
+			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].ToString(), test.expectedAST.ToString())
+		}
+	}
+}
+
 func TestParseLogicalOperators(t *testing.T) {
 	tests := []struct {
 		input       string
