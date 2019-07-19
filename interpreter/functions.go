@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"fmt"
 	"golox/ast"
 	"golox/env"
 )
@@ -30,6 +31,11 @@ func (n *NativeFunction) Arity() int {
 	return n.arity
 }
 
+// String returns the name of the native function
+func (n *NativeFunction) String() string {
+	return fmt.Sprintf("<native/%p>", n.nativeCall)
+}
+
 // UserFunction are functions defined in Lox code
 type UserFunction struct {
 	Callable
@@ -55,4 +61,9 @@ func (u *UserFunction) Call(arguments []interface{}) (interface{}, error) {
 // Arity returns the number of arguments of the user-defined function
 func (u *UserFunction) Arity() int {
 	return len(u.Definition.Params)
+}
+
+// String returns the name of the user-function
+func (u *UserFunction) String() string {
+	return u.Definition.Name.Lexeme
 }
