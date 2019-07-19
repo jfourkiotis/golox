@@ -441,6 +441,40 @@ func TestErrorSynchronization(t *testing.T) {
 	}
 }
 
+func TestParseFunctionDefinition(t *testing.T) {
+	tests := []struct {
+		input       string
+		expectedAST ast.Node
+	}{
+		{"fun f(x, y){ print x + y; }", &ast.Function{
+			Name: token.Token{Lexeme: "f"},
+			Params: []token.Token{
+				token.Token{Lexeme: "x"},
+				token.Token{Lexeme: "y"},
+			},
+			Body: []ast.Stmt{
+				&ast.Print{
+					Expression: &ast.Binary{
+						Left:     &ast.Variable{Name: token.Token{Lexeme: "x"}},
+						Operator: token.Token{Lexeme: "+"},
+						Right:    &ast.Variable{Name: token.Token{Lexeme: "y"}}}},
+			}}},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := New(tokens)
+		statements := p.Parse()
+
+		testExpectStatementsLen(statements, 1, t)
+
+		if statements[0].ToString() != test.expectedAST.ToString() {
+			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].ToString(), test.expectedAST.ToString())
+		}
+	}
+}
+
 func TestParseCallExpression(t *testing.T) {
 	tests := []struct {
 		input       string

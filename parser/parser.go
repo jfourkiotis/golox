@@ -9,8 +9,11 @@ import (
 /*
 program    -> declaration* EOF ;
 declaration -> varDecl
+            | funDecl
 			| stmt
 varDecl    -> "var" IDENTIFIER ( "=" expression )? ";" ;
+funDecl    -> "fun" function ;
+function   -> IDENTIFIER "(" parameters? ")" block ;
 stmt       -> exprStmt
             | ifStmt
 			| printStmt
@@ -75,6 +78,14 @@ func (p *Parser) declaration() ast.Stmt {
 			return nil
 		}
 		return stmt
+	} else if p.match(token.FUN) {
+		stmt, err := p.funDeclaration("function")
+		if err != nil {
+			p.synchronize()
+			parseerror.LogError(err)
+			return nil
+		}
+		return stmt
 	}
 	stmt, err := p.statement()
 	if err != nil {
@@ -83,6 +94,54 @@ func (p *Parser) declaration() ast.Stmt {
 		return nil
 	}
 	return stmt
+}
+
+func (p *Parser) funDeclaration(kind string) (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "Expected "+kind+" name.")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.LEFTPAREN, "Expected '(' after "+kind+" name.")
+	if err != nil {
+		return nil, err
+	}
+
+	parameters := make([]token.Token, 0)
+	if !p.check(token.RIGHTPAREN) {
+		for {
+			if len(parameters) >= 8 {
+				return nil, parseerror.MakeError(p.peek(), "Cannot have more than 8 parameters.")
+			}
+
+			param, err := p.consume(token.IDENTIFIER, "Expected parameter name.")
+			if err != nil {
+				return nil, err
+			}
+
+			parameters = append(parameters, param)
+
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+	_, err = p.consume(token.RIGHTPAREN, "Expected ')' after parameters.")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = p.consume(token.LEFTBRACE, "Expected '{' before "+kind+" body.")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.block()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.Function{Name: name, Params: parameters, Body: body}, nil
 }
 
 func (p *Parser) varDeclaration() (ast.Stmt, error) {

@@ -347,6 +347,36 @@ func TestEvalWhileStatement(t *testing.T) {
 	}
 }
 
+func TestEvalUserFunctions(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{`fun sayHi(first, last) {
+			print "Hi " + first + " " + last + "!";
+		}
+		
+		sayHi("Dear", "Reader");
+		`, "Hi Dear Reader!"},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := parser.New(tokens)
+		statements := p.Parse()
+
+		out := &strings.Builder{}
+		options.Writer = out
+		Interpret(statements, GlobalEnv)
+
+		outStr := strings.TrimSuffix(out.String(), "\n")
+		if outStr != test.expectedOutput {
+			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
+		}
+	}
+}
+
 func TestEvalGlobals(t *testing.T) {
 	tests := []struct {
 		input string

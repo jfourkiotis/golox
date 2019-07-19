@@ -316,3 +316,35 @@ func (c *Call) ToString() string {
 	sb.WriteString(")")
 	return sb.String()
 }
+
+// Function is the function definition node
+type Function struct {
+	Name   token.Token
+	Params []token.Token
+	Body   []Stmt
+}
+
+// ToString pretty prints the function
+func (f *Function) ToString() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString("fun")
+	sb.WriteString(" ")
+	sb.WriteString(f.Name.Lexeme)
+	sb.WriteString(" ")
+	sb.WriteString("(")
+	for _, p := range f.Params {
+		sb.WriteString(p.Lexeme)
+		sb.WriteString(" ")
+	}
+	sb.WriteString(")")
+	sb.WriteString(" ")
+	sb.WriteString("(")
+	for _, stmt := range f.Body {
+		sb.WriteString(stmt.ToString())
+		sb.WriteString(" ")
+	}
+	sb.WriteString(")")
+	sb.WriteString(")")
+	return sb.String()
+}
