@@ -377,6 +377,37 @@ func TestEvalUserFunctions(t *testing.T) {
 	}
 }
 
+func TestEvalReturn(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{`fun fib(n) {
+			if (n <= 1) return n;
+			return fib(n-2) + fib(n-1);
+		}
+		
+		print fib(33);
+		`, "3.524578e+06"},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := parser.New(tokens)
+		statements := p.Parse()
+
+		out := &strings.Builder{}
+		options.Writer = out
+		Interpret(statements, GlobalEnv)
+
+		outStr := strings.TrimSuffix(out.String(), "\n")
+		if outStr != test.expectedOutput {
+			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
+		}
+	}
+}
+
 func TestEvalGlobals(t *testing.T) {
 	tests := []struct {
 		input string

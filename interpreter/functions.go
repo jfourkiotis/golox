@@ -51,7 +51,11 @@ func (u *UserFunction) Call(arguments []interface{}) (interface{}, error) {
 
 	for _, stmt := range u.Definition.Body {
 		_, err := Eval(stmt, env)
+
 		if err != nil {
+			if r, ok := err.(returnError); ok {
+				return r.value, nil
+			}
 			return nil, err
 		}
 	}

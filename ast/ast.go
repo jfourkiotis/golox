@@ -348,3 +348,22 @@ func (f *Function) ToString() string {
 	sb.WriteString(")")
 	return sb.String()
 }
+
+// Return is used to return from a function
+type Return struct {
+	Stmt
+	Keyword token.Token
+	Value   Expr
+}
+
+// ToString pretty prints the function
+func (r *Return) ToString() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString("return")
+	sb.WriteString(" ")
+	sb.WriteString(r.Value.ToString())
+	sb.WriteString(" ")
+	sb.WriteString(")")
+	return sb.String()
+}

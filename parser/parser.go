@@ -17,9 +17,11 @@ function   -> IDENTIFIER "(" parameters? ")" block ;
 stmt       -> exprStmt
             | ifStmt
 			| printStmt
+			| returnStmt
 			| whileStmt
 			| forStmt
 			| block
+returnStmt -> "return" expression? ";" ;
 ifStmt     -> "if" "(" expression ")" statement ( "else " statement )? ;
 whileStmt  -> "while" "(" expression ")" statement ;
 forStmt    -> "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
@@ -173,6 +175,8 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.forStatement()
 	} else if p.match(token.PRINT) {
 		return p.printStatement()
+	} else if p.match(token.RETURN) {
+		return p.returnStatement()
 	} else if p.match(token.LEFTBRACE) {
 		var err error
 		if statements, err := p.block(); err == nil {
@@ -310,6 +314,25 @@ func (p *Parser) block() ([]ast.Stmt, error) {
 	}
 	p.consume(token.RIGHTBRACE, "Expected '}' after block.")
 	return statements, nil
+}
+
+func (p *Parser) returnStatement() (ast.Stmt, error) {
+	keyword := p.previous()
+
+	var value ast.Expr
+	var err error
+	if !p.check(token.SEMICOLON) {
+		value, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = p.consume(token.SEMICOLON, "Expected ';' after return value.")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Return{Keyword: keyword, Value: value}, nil
 }
 
 func (p *Parser) printStatement() (ast.Stmt, error) {

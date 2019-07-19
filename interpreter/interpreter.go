@@ -23,6 +23,12 @@ type Options struct {
 
 var options = &Options{Writer: os.Stdout}
 
+// return
+type returnError struct {
+	error
+	value interface{}
+}
+
 // Interpret tries to calculate the result of an expression, or print a message
 // if an error occurs
 func Interpret(statements []ast.Stmt, env *env.Environment) {
@@ -285,6 +291,16 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 		function := &UserFunction{Definition: n}
 		environment.Define(n.Name.Lexeme, function)
 		return nil, nil
+	case *ast.Return:
+		var value interface{}
+		var err error
+		if n.Value != nil {
+			value, err = Eval(n.Value, environment)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, returnError{value: value}
 	}
 	panic("Fatal error")
 }
