@@ -288,7 +288,7 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 
 		return function.Call(args)
 	case *ast.Function:
-		function := &UserFunction{Definition: n}
+		function := &UserFunction{Definition: n, Closure: environment}
 		environment.Define(n.Name.Lexeme, function)
 		return nil, nil
 	case *ast.Return:

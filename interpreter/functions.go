@@ -40,11 +40,12 @@ func (n *NativeFunction) String() string {
 type UserFunction struct {
 	Callable
 	Definition *ast.Function
+	Closure    *env.Environment
 }
 
 // Call executes a user-defined Lox function
 func (u *UserFunction) Call(arguments []interface{}) (interface{}, error) {
-	env := env.New(GlobalEnv)
+	env := env.New(u.Closure)
 	for i, param := range u.Definition.Params {
 		env.Define(param.Lexeme, arguments[i])
 	}
