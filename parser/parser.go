@@ -20,7 +20,11 @@ stmt       -> exprStmt
 			| returnStmt
 			| whileStmt
 			| forStmt
+			| breakStmt
+			| continueStmt
 			| block
+breakStmt  -> "break" ";" ;
+continueStmt -> "continue" ";" ;
 returnStmt -> "return" expression? ";" ;
 ifStmt     -> "if" "(" expression ")" statement ( "else " statement )? ;
 whileStmt  -> "while" "(" expression ")" statement ;
@@ -52,13 +56,15 @@ primary    -> NUMBER | STRING | "false" | "true" | "nil"
 // Parser will transform an array of tokens to an AST.
 // Use parser.New to create a new Parser. Do not create a Parser directly
 type Parser struct {
-	tokens  []token.Token
-	current int
+	tokens        []token.Token
+	current       int
+	inloop        bool     // used when checking stray break/continue statements
+	loopIncrement ast.Expr // the current loop increment expression, used to parse continue statements
 }
 
 // New creates a new parser
 func New(tokens []token.Token) Parser {
-	return Parser{tokens, 0}
+	return Parser{tokens, 0, false, nil}
 }
 
 // Parse is the driver function that begins parsing
@@ -99,6 +105,9 @@ func (p *Parser) declaration() ast.Stmt {
 }
 
 func (p *Parser) funDeclaration(kind string) (ast.Stmt, error) {
+	oldInLoop := p.inloop
+	defer p.resetLoop(oldInLoop)
+	p.inloop = false
 	name, err := p.consume(token.IDENTIFIER, "Expected "+kind+" name.")
 	if err != nil {
 		return nil, err
@@ -177,6 +186,10 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.printStatement()
 	} else if p.match(token.RETURN) {
 		return p.returnStatement()
+	} else if p.match(token.BREAK) {
+		return p.breakStatement()
+	} else if p.match(token.CONTINUE) {
+		return p.continueStatement()
 	} else if p.match(token.LEFTBRACE) {
 		var err error
 		if statements, err := p.block(); err == nil {
@@ -187,7 +200,34 @@ func (p *Parser) statement() (ast.Stmt, error) {
 	return p.expressionStatement()
 }
 
+func (p *Parser) breakStatement() (ast.Stmt, error) {
+	if !p.inloop {
+		return nil, parseerror.MakeError(p.previous(), "Stray break detected.")
+	}
+	tok := p.previous()
+	_, err := p.consume(token.SEMICOLON, "Expected ';' after break")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Break{Token: tok}, nil
+}
+
+func (p *Parser) continueStatement() (ast.Stmt, error) {
+	if !p.inloop {
+		return nil, parseerror.MakeError(p.previous(), "Stray continue detected.")
+	}
+	tok := p.previous()
+	_, err := p.consume(token.SEMICOLON, "Expected ';' after continue")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Continue{Token: tok, Increment: p.loopIncrement}, nil
+}
+
 func (p *Parser) forStatement() (ast.Stmt, error) {
+	oldInLoop := p.inloop
+	defer p.resetLoop(oldInLoop)
+	p.inloop = true
 	_, err := p.consume(token.LEFTPAREN, "Expected '(' after 'for'.")
 	if err != nil {
 		return nil, err
@@ -229,6 +269,10 @@ func (p *Parser) forStatement() (ast.Stmt, error) {
 		}
 	}
 
+	oldIncrement := p.loopIncrement
+	defer p.resetLoopIncrement(oldIncrement)
+	p.loopIncrement = increment
+
 	_, err = p.consume(token.RIGHTPAREN, "Expected ')' after for clauses.")
 	if err != nil {
 		return nil, err
@@ -262,6 +306,9 @@ func (p *Parser) forStatement() (ast.Stmt, error) {
 }
 
 func (p *Parser) whileStatement() (ast.Stmt, error) {
+	oldInLoop := p.inloop
+	defer p.resetLoop(oldInLoop)
+	p.inloop = true
 	_, err := p.consume(token.LEFTPAREN, "Expected '(' after 'while'.")
 	if err != nil {
 		return nil, err
@@ -689,4 +736,12 @@ func (p *Parser) synchronize() {
 		}
 		p.advance()
 	}
+}
+
+func (p *Parser) resetLoop(val bool) {
+	p.inloop = val
+}
+
+func (p *Parser) resetLoopIncrement(increment ast.Expr) {
+	p.loopIncrement = increment
 }

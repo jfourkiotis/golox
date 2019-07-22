@@ -367,3 +367,34 @@ func (r *Return) ToString() string {
 	sb.WriteString(")")
 	return sb.String()
 }
+
+// Break is used to return from a function
+type Break struct {
+	Stmt
+	Token token.Token
+}
+
+// ToString pretty prints the function
+func (b *Break) ToString() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString("break")
+	sb.WriteString(")")
+	return sb.String()
+}
+
+// Continue is used to return from a function
+type Continue struct {
+	Stmt
+	Token     token.Token
+	Increment Expr
+}
+
+// ToString pretty prints the function
+func (c *Continue) ToString() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString("continue")
+	sb.WriteString(")")
+	return sb.String()
+}

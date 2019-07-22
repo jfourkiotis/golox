@@ -377,6 +377,57 @@ func TestEvalUserFunctions(t *testing.T) {
 	}
 }
 
+func TestEvalBreakContinue(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{`var a = 0;
+		while (a < 10) {
+			if (a == 8) break;
+			a = a + 1;
+		}
+		print a;
+		`, "8"},
+		{`
+		var a = 1;
+		while (a < 10) {
+			a = a + 1;
+			if (a < 9) {
+				continue;
+			}
+			print a;
+			break;
+		}
+		`, "9"},
+		{`
+		for (var a = 1; a < 10; a = a + 1) {
+			if (a < 9) {
+				continue;
+			}
+			print a;
+			break;
+		}
+		`, "9"},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := parser.New(tokens)
+		statements := p.Parse()
+
+		out := &strings.Builder{}
+		options.Writer = out
+		Interpret(statements, GlobalEnv)
+
+		outStr := strings.TrimSuffix(out.String(), "\n")
+		if outStr != test.expectedOutput {
+			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
+		}
+	}
+}
+
 func TestEvalReturn(t *testing.T) {
 	tests := []struct {
 		input          string
