@@ -20,7 +20,11 @@ stmt       -> exprStmt
 			| returnStmt
 			| whileStmt
 			| forStmt
+			| breakStmt
+			| continueStmt
 			| block
+breakStmt  -> "break" ";" ;
+continueStmt -> "continue" ";" ;
 returnStmt -> "return" expression? ";" ;
 ifStmt     -> "if" "(" expression ")" statement ( "else " statement )? ;
 whileStmt  -> "while" "(" expression ")" statement ;
@@ -52,13 +56,14 @@ primary    -> NUMBER | STRING | "false" | "true" | "nil"
 // Parser will transform an array of tokens to an AST.
 // Use parser.New to create a new Parser. Do not create a Parser directly
 type Parser struct {
-	tokens  []token.Token
-	current int
+	tokens      []token.Token
+	current     int
+	loopCounter uint64
 }
 
 // New creates a new parser
 func New(tokens []token.Token) Parser {
-	return Parser{tokens, 0}
+	return Parser{tokens, 0, 0}
 }
 
 // Parse is the driver function that begins parsing
@@ -177,6 +182,10 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.printStatement()
 	} else if p.match(token.RETURN) {
 		return p.returnStatement()
+	} else if p.match(token.BREAK) {
+		return p.breakStatement()
+	} else if p.match(token.CONTINUE) {
+		return p.continueStatement()
 	} else if p.match(token.LEFTBRACE) {
 		var err error
 		if statements, err := p.block(); err == nil {
@@ -187,7 +196,30 @@ func (p *Parser) statement() (ast.Stmt, error) {
 	return p.expressionStatement()
 }
 
+func (p *Parser) breakStatement() (ast.Stmt, error) {
+	if p.loopCounter == 0 {
+		return nil, parseerror.MakeError(p.previous(), "Stray break detected")
+	}
+	tok := p.previous()
+	_, err := p.consume(token.SEMICOLON, "Expected ';' after break")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Break{Token: tok}, nil
+}
+
+func (p *Parser) continueStatement() (ast.Stmt, error) {
+	tok := p.previous()
+	_, err := p.consume(token.SEMICOLON, "Expected ';' after continue")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Continue{Token: tok}, nil
+}
+
 func (p *Parser) forStatement() (ast.Stmt, error) {
+	p.startLoop()
+	defer p.endLoop()
 	_, err := p.consume(token.LEFTPAREN, "Expected '(' after 'for'.")
 	if err != nil {
 		return nil, err
@@ -262,6 +294,8 @@ func (p *Parser) forStatement() (ast.Stmt, error) {
 }
 
 func (p *Parser) whileStatement() (ast.Stmt, error) {
+	p.startLoop()
+	defer p.endLoop()
 	_, err := p.consume(token.LEFTPAREN, "Expected '(' after 'while'.")
 	if err != nil {
 		return nil, err
@@ -689,4 +723,12 @@ func (p *Parser) synchronize() {
 		}
 		p.advance()
 	}
+}
+
+func (p *Parser) startLoop() {
+	p.loopCounter++
+}
+
+func (p *Parser) endLoop() {
+	p.loopCounter--
 }
