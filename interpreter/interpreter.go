@@ -34,6 +34,11 @@ type breakError struct {
 	error
 }
 
+// continue
+type continueError struct {
+	error
+}
+
 // Interpret tries to calculate the result of an expression, or print a message
 // if an error occurs
 func Interpret(statements []ast.Stmt, env *env.Environment) {
@@ -252,6 +257,8 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 			if err != nil {
 				if _, ok := err.(breakError); ok {
 					break
+				} else if _, ok := err.(continueError); ok {
+					continue
 				}
 				return nil, err
 			}
@@ -314,6 +321,13 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 	case *ast.Break:
 		return nil, breakError{}
 	case *ast.Continue:
+		if n.Increment != nil {
+			_, err := Eval(n.Increment, environment)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, continueError{}
 	}
 	panic("Fatal error")
 }

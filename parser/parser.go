@@ -56,14 +56,15 @@ primary    -> NUMBER | STRING | "false" | "true" | "nil"
 // Parser will transform an array of tokens to an AST.
 // Use parser.New to create a new Parser. Do not create a Parser directly
 type Parser struct {
-	tokens  []token.Token
-	current int
-	inloop  bool
+	tokens        []token.Token
+	current       int
+	inloop        bool     // used when checking stray break/continue statements
+	loopIncrement ast.Expr // the current loop increment expression, used to parse continue statements
 }
 
 // New creates a new parser
 func New(tokens []token.Token) Parser {
-	return Parser{tokens, 0, false}
+	return Parser{tokens, 0, false, nil}
 }
 
 // Parse is the driver function that begins parsing
@@ -201,7 +202,7 @@ func (p *Parser) statement() (ast.Stmt, error) {
 
 func (p *Parser) breakStatement() (ast.Stmt, error) {
 	if !p.inloop {
-		return nil, parseerror.MakeError(p.previous(), "Stray break detected")
+		return nil, parseerror.MakeError(p.previous(), "Stray break detected.")
 	}
 	tok := p.previous()
 	_, err := p.consume(token.SEMICOLON, "Expected ';' after break")
@@ -212,12 +213,15 @@ func (p *Parser) breakStatement() (ast.Stmt, error) {
 }
 
 func (p *Parser) continueStatement() (ast.Stmt, error) {
+	if !p.inloop {
+		return nil, parseerror.MakeError(p.previous(), "Stray continue detected.")
+	}
 	tok := p.previous()
 	_, err := p.consume(token.SEMICOLON, "Expected ';' after continue")
 	if err != nil {
 		return nil, err
 	}
-	return &ast.Continue{Token: tok}, nil
+	return &ast.Continue{Token: tok, Increment: p.loopIncrement}, nil
 }
 
 func (p *Parser) forStatement() (ast.Stmt, error) {
@@ -264,6 +268,10 @@ func (p *Parser) forStatement() (ast.Stmt, error) {
 			return nil, err
 		}
 	}
+
+	oldIncrement := p.loopIncrement
+	defer p.resetLoopIncrement(oldIncrement)
+	p.loopIncrement = increment
 
 	_, err = p.consume(token.RIGHTPAREN, "Expected ')' after for clauses.")
 	if err != nil {
@@ -732,4 +740,8 @@ func (p *Parser) synchronize() {
 
 func (p *Parser) resetLoop(val bool) {
 	p.inloop = val
+}
+
+func (p *Parser) resetLoopIncrement(increment ast.Expr) {
+	p.loopIncrement = increment
 }

@@ -386,7 +386,8 @@ func (b *Break) ToString() string {
 // Continue is used to return from a function
 type Continue struct {
 	Stmt
-	Token token.Token
+	Token     token.Token
+	Increment Expr
 }
 
 // ToString pretty prints the function

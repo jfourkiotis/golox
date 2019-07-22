@@ -377,7 +377,7 @@ func TestEvalUserFunctions(t *testing.T) {
 	}
 }
 
-func TestEvalBreak(t *testing.T) {
+func TestEvalBreakContinue(t *testing.T) {
 	tests := []struct {
 		input          string
 		expectedOutput string
@@ -389,6 +389,26 @@ func TestEvalBreak(t *testing.T) {
 		}
 		print a;
 		`, "8"},
+		{`
+		var a = 1;
+		while (a < 10) {
+			a = a + 1;
+			if (a < 9) {
+				continue;
+			}
+			print a;
+			break;
+		}
+		`, "9"},
+		{`
+		for (var a = 1; a < 10; a = a + 1) {
+			if (a < 9) {
+				continue;
+			}
+			print a;
+			break;
+		}
+		`, "9"},
 	}
 
 	for _, test := range tests {

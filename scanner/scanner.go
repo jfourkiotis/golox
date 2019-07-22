@@ -24,8 +24,8 @@ var keywords = map[string]token.Type{
 	"true":     token.TRUE,
 	"var":      token.VAR,
 	"while":    token.WHILE,
-	"continue": token.CONTINUE,
 	"break":    token.BREAK,
+	"continue": token.CONTINUE,
 }
 
 // Scanner transforms the source into tokens
