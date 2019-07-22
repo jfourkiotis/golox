@@ -104,6 +104,9 @@ func (p *Parser) declaration() ast.Stmt {
 }
 
 func (p *Parser) funDeclaration(kind string) (ast.Stmt, error) {
+	oldLoopCounter := p.loopCounter
+	defer p.resetLoop(oldLoopCounter)
+	p.loopCounter = 0
 	name, err := p.consume(token.IDENTIFIER, "Expected "+kind+" name.")
 	if err != nil {
 		return nil, err
@@ -731,4 +734,8 @@ func (p *Parser) startLoop() {
 
 func (p *Parser) endLoop() {
 	p.loopCounter--
+}
+
+func (p *Parser) resetLoop(counter uint64) {
+	p.loopCounter = counter
 }
