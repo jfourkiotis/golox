@@ -178,6 +178,12 @@ func Eval(node ast.Node, environment *env.Environment) (interface{}, error) {
 			return !isEqual(left, right), nil
 		case token.EQUALEQUAL:
 			return isEqual(left, right), nil
+		case token.COMMA:
+			_, err := Eval(n.Left, environment)
+			if err != nil {
+				return nil, err
+			}
+			return Eval(n.Right, environment)
 		}
 	case *ast.Ternary:
 		cond, err := Eval(n.Condition, environment)
