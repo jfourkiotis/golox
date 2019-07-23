@@ -9,3 +9,4 @@ Current status:
 * comma operator (`,`)
 * ternary operator (`?:`)
 * power operator (`**`, right associative)
+* uninitialized variable access is a runtime error
