@@ -249,6 +249,33 @@ func TestEvalAssignment(t *testing.T) {
 	}
 }
 
+func testInterpreterOutput(input string, expected string, t *testing.T) {
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := parser.New(tokens)
+	statements := parser.Parse()
+
+	out := &strings.Builder{}
+	options.Writer = out
+	env := env.NewGlobal()
+
+	GlobalEnv = env
+	defer ResetGlobalEnv()
+	locals, _ := semantic.Resolve(statements)
+
+	for _, stmt := range statements {
+		_, err := Eval(stmt, env, locals)
+		if err != nil {
+			t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
+		}
+	}
+
+	outStr := strings.TrimSuffix(out.String(), "\n")
+	if outStr != expected {
+		t.Errorf("Expected <%s>. Got <%s>", expected, outStr)
+	}
+}
+
 func TestEvalWhileStatement(t *testing.T) {
 	tests := []struct {
 		input          string
@@ -276,30 +303,7 @@ func TestEvalWhileStatement(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		scanner := scanner.New(test.input)
-		tokens := scanner.ScanTokens()
-		parser := parser.New(tokens)
-		statements := parser.Parse()
-
-		out := &strings.Builder{}
-		options.Writer = out
-		env := env.NewGlobal()
-
-		GlobalEnv = env
-		defer ResetGlobalEnv()
-		locals, _ := semantic.Resolve(statements)
-
-		for _, stmt := range statements {
-			_, err := Eval(stmt, env, locals)
-			if err != nil {
-				t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
-			}
-		}
-
-		outStr := strings.TrimSuffix(out.String(), "\n")
-		if outStr != test.expectedOutput {
-			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
-		}
+		testInterpreterOutput(test.input, test.expectedOutput, t)
 	}
 }
 
@@ -317,25 +321,7 @@ func TestEvalUserFunctions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		s := scanner.New(test.input)
-		tokens := s.ScanTokens()
-		p := parser.New(tokens)
-		statements := p.Parse()
-
-		out := &strings.Builder{}
-		options.Writer = out
-
-		env := env.NewGlobal()
-		GlobalEnv = env
-		defer ResetGlobalEnv()
-		locals, _ := semantic.Resolve(statements)
-
-		Interpret(statements, env, locals)
-
-		outStr := strings.TrimSuffix(out.String(), "\n")
-		if outStr != test.expectedOutput {
-			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
-		}
+		testInterpreterOutput(test.input, test.expectedOutput, t)
 	}
 }
 
@@ -374,20 +360,7 @@ func TestEvalBreakContinue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		s := scanner.New(test.input)
-		tokens := s.ScanTokens()
-		p := parser.New(tokens)
-		statements := p.Parse()
-
-		out := &strings.Builder{}
-		options.Writer = out
-		locals, _ := semantic.Resolve(statements)
-		Interpret(statements, GlobalEnv, locals)
-
-		outStr := strings.TrimSuffix(out.String(), "\n")
-		if outStr != test.expectedOutput {
-			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
-		}
+		testInterpreterOutput(test.input, test.expectedOutput, t)
 	}
 }
 
@@ -406,20 +379,7 @@ func TestEvalReturn(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		s := scanner.New(test.input)
-		tokens := s.ScanTokens()
-		p := parser.New(tokens)
-		statements := p.Parse()
-
-		out := &strings.Builder{}
-		options.Writer = out
-		locals, _ := semantic.Resolve(statements)
-		Interpret(statements, GlobalEnv, locals)
-
-		outStr := strings.TrimSuffix(out.String(), "\n")
-		if outStr != test.expectedOutput {
-			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
-		}
+		testInterpreterOutput(test.input, test.expectedOutput, t)
 	}
 }
 
@@ -470,30 +430,7 @@ func TestEvalIfStatement(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		scanner := scanner.New(test.input)
-		tokens := scanner.ScanTokens()
-		parser := parser.New(tokens)
-		statements := parser.Parse()
-
-		out := &strings.Builder{}
-		options.Writer = out
-		env := env.NewGlobal()
-
-		GlobalEnv = env
-		defer ResetGlobalEnv()
-		locals, _ := semantic.Resolve(statements)
-
-		for _, stmt := range statements {
-			_, err := Eval(stmt, env, locals)
-			if err != nil {
-				t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
-			}
-		}
-
-		outStr := strings.TrimSuffix(out.String(), "\n")
-		if outStr != test.expectedOutput {
-			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
-		}
+		testInterpreterOutput(test.input, test.expectedOutput, t)
 	}
 }
 
@@ -509,25 +446,7 @@ func TestEvalLogicalOperators(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		scanner := scanner.New(test.input)
-		tokens := scanner.ScanTokens()
-		parser := parser.New(tokens)
-		statements := parser.Parse()
-
-		out := &strings.Builder{}
-		options.Writer = out
-		env := env.NewGlobal()
-		for _, stmt := range statements {
-			_, err := Eval(stmt, env, nil)
-			if err != nil {
-				t.Errorf("Runtime error when evaluating logical operator: %s", err.Error())
-			}
-		}
-
-		outStr := strings.TrimSuffix(out.String(), "\n")
-		if outStr != test.expectedOutput {
-			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
-		}
+		testInterpreterOutput(test.input, test.expectedOutput, t)
 	}
 }
 
@@ -565,22 +484,5 @@ func TestVariableResolution(t *testing.T) {
 		f();
 	}	
 	`
-	s := scanner.New(input)
-	tokens := s.ScanTokens()
-	p := parser.New(tokens)
-	statements := p.Parse()
-
-	locals, err := semantic.Resolve(statements)
-	if err != nil {
-		t.Fatalf("Resolving declarations failed. Got=%q", err.Error())
-	}
-
-	out := &strings.Builder{}
-	options.Writer = out
-	Interpret(statements, GlobalEnv, locals)
-
-	outStr := strings.TrimSuffix(out.String(), "\n")
-	if outStr != "global\nglobal" {
-		t.Errorf("Expected <%s>. Got <%s>", "global\nglobal", outStr)
-	}
+	testInterpreterOutput(input, "global\nglobal", t)
 }
