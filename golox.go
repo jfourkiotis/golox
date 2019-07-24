@@ -57,6 +57,7 @@ func run(src string, env *env.Environment) {
 	}
 	locals, err := semantic.Resolve(statements)
 	if err != nil || semanticerror.HadError {
+		fmt.Println(err.Error())
 		return
 	}
 	interpreter.Interpret(statements, env, locals)
