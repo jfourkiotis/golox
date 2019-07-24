@@ -12,6 +12,29 @@ import (
 	"testing"
 )
 
+func testExpectStatementsLen(statements []ast.Stmt, length int, t *testing.T) {
+	if len(statements) != length {
+		t.Fatalf("Expected %d statements. Got=%d", length, len(statements))
+	}
+}
+
+func testLiteral(input string, expected interface{}, t *testing.T) {
+	scanner := scanner.New(input)
+	tokens := scanner.ScanTokens()
+	parser := parser.New(tokens)
+	statements := parser.Parse()
+
+	testExpectStatementsLen(statements, 1, t)
+
+	exprStmt, ok := statements[0].(*ast.Expression)
+	if !ok {
+		t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
+	}
+
+	result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
+	testLiteralEquality(result, expected, t)
+}
+
 func TestEvalLiteral(t *testing.T) {
 	tests := []struct {
 		literal  string
@@ -28,22 +51,7 @@ func TestEvalLiteral(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		scanner := scanner.New(test.literal)
-		tokens := scanner.ScanTokens()
-		parser := parser.New(tokens)
-		statements := parser.Parse()
-
-		if len(statements) != 1 {
-			t.Fatalf("Expected 1 statement. Got %v", len(statements))
-		}
-
-		exprStmt, ok := statements[0].(*ast.Expression)
-		if !ok {
-			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
-		}
-
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
-		testLiteralEquality(result, test.expected, t)
+		testLiteral(test.literal, test.expected, t)
 	}
 }
 
@@ -63,22 +71,7 @@ func TestEvalUnary(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		scanner := scanner.New(test.literal)
-		tokens := scanner.ScanTokens()
-		parser := parser.New(tokens)
-		statements := parser.Parse()
-
-		if len(statements) != 1 {
-			t.Fatalf("Expected 1 statement. Got %v", len(statements))
-		}
-
-		exprStmt, ok := statements[0].(*ast.Expression)
-		if !ok {
-			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
-		}
-
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
-		testLiteralEquality(result, test.expected, t)
+		testLiteral(test.literal, test.expected, t)
 	}
 }
 
@@ -108,22 +101,7 @@ func TestEvalBinary(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		scanner := scanner.New(test.literal)
-		tokens := scanner.ScanTokens()
-		parser := parser.New(tokens)
-		statements := parser.Parse()
-
-		if len(statements) != 1 {
-			t.Fatalf("Expected 1 statement. Got %v", len(statements))
-		}
-
-		exprStmt, ok := statements[0].(*ast.Expression)
-		if !ok {
-			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
-		}
-
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
-		testLiteralEquality(result, test.expected, t)
+		testLiteral(test.literal, test.expected, t)
 	}
 }
 
@@ -140,22 +118,7 @@ func TestEvalBinaryPrecedence(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		scanner := scanner.New(test.literal)
-		tokens := scanner.ScanTokens()
-		parser := parser.New(tokens)
-		statements := parser.Parse()
-
-		if len(statements) != 1 {
-			t.Fatalf("Expected 1 statement. Got %v", len(statements))
-		}
-
-		exprStmt, ok := statements[0].(*ast.Expression)
-		if !ok {
-			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
-		}
-
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
-		testLiteralEquality(result, test.expected, t)
+		testLiteral(test.literal, test.expected, t)
 	}
 }
 
@@ -169,22 +132,7 @@ func TestEvalTernary(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		scanner := scanner.New(test.literal)
-		tokens := scanner.ScanTokens()
-		parser := parser.New(tokens)
-		statements := parser.Parse()
-
-		if len(statements) != 1 {
-			t.Fatalf("Expected 1 statement. Got %v", len(statements))
-		}
-
-		exprStmt, ok := statements[0].(*ast.Expression)
-		if !ok {
-			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
-		}
-
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
-		testLiteralEquality(result, test.expected, t)
+		testLiteral(test.literal, test.expected, t)
 	}
 }
 
