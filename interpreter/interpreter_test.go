@@ -263,12 +263,7 @@ func testInterpreterOutput(input string, expected string, t *testing.T) {
 	defer ResetGlobalEnv()
 	locals, _ := semantic.Resolve(statements)
 
-	for _, stmt := range statements {
-		_, err := Eval(stmt, env, locals)
-		if err != nil {
-			t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
-		}
-	}
+	Interpret(statements, GlobalEnv, locals)
 
 	outStr := strings.TrimSuffix(out.String(), "\n")
 	if outStr != expected {
