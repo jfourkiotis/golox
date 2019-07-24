@@ -309,6 +309,8 @@ func Eval(node ast.Node, environment *env.Environment, locals semantic.Locals) (
 			a, err := Eval(arg, environment, locals)
 			if err == nil {
 				args = append(args, a)
+			} else {
+				return nil, err
 			}
 		}
 
