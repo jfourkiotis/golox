@@ -1,0 +1,26 @@
+var a = "global";
+{
+	fun f() {
+		print a;
+	}
+
+	f();
+	var a = "block";
+	f();
+}
+
+fun global() {
+	print "global";
+}
+
+{
+	fun f() {
+		global();
+	}
+
+	f();
+	fun global() {
+		print "local";
+	}
+	f();
+}

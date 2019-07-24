@@ -52,6 +52,20 @@ func (e *Environment) Get(name token.Token) (interface{}, error) {
 	return nil, fmt.Errorf("Undefined variable '%v'", name.Lexeme)
 }
 
+// GetAt lookups a variable a certain distance up the chain of environments
+func (e *Environment) GetAt(distance int, name token.Token) (interface{}, error) {
+	return e.Ancestor(distance).Get(name)
+}
+
+// Ancestor reaches an environment up the environment chain
+func (e *Environment) Ancestor(distance int) *Environment {
+	env := e
+	for i := 0; i < distance; i++ {
+		env = env.enclosing
+	}
+	return env
+}
+
 // Assign sets a new value to an old variable
 func (e *Environment) Assign(name token.Token, value interface{}) error {
 	if _, prs := e.values[name.Lexeme]; prs {
@@ -62,4 +76,9 @@ func (e *Environment) Assign(name token.Token, value interface{}) error {
 		return e.enclosing.Assign(name, value)
 	}
 	return runtimeerror.MakeRuntimeError(name, fmt.Sprintf("Undefined variable '%s'.", name.Lexeme))
+}
+
+// AssignAt sets a new value to an old variable
+func (e *Environment) AssignAt(distance int, name token.Token, value interface{}) error {
+	return e.Ancestor(distance).Assign(name, value)
 }

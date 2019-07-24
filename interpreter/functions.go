@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golox/ast"
 	"golox/env"
+	"golox/semantic"
 )
 
 type loxCallable func([]interface{}) (interface{}, error)
@@ -41,6 +42,7 @@ type UserFunction struct {
 	Callable
 	Definition *ast.Function
 	Closure    *env.Environment
+	Locals     semantic.Locals
 }
 
 // Call executes a user-defined Lox function
@@ -51,7 +53,7 @@ func (u *UserFunction) Call(arguments []interface{}) (interface{}, error) {
 	}
 
 	for _, stmt := range u.Definition.Body {
-		_, err := Eval(stmt, env)
+		_, err := Eval(stmt, env, u.Locals)
 
 		if err != nil {
 			if r, ok := err.(returnError); ok {
