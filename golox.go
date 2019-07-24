@@ -10,6 +10,8 @@ import (
 	"golox/parser"
 	"golox/runtimeerror"
 	"golox/scanner"
+	"golox/semantic"
+	"golox/semanticerror"
 	"io/ioutil"
 	"os"
 )
@@ -26,7 +28,7 @@ func runFile(file string) {
 	run(string(dat), interpreter.GlobalEnv)
 	if parseerror.HadError {
 		os.Exit(65)
-	} else if runtimeerror.HadError {
+	} else if runtimeerror.HadError || semanticerror.HadError {
 		os.Exit(70)
 	}
 }
@@ -40,6 +42,8 @@ func runPrompt() {
 		check(err)
 		run(string(dat), env)
 		parseerror.HadError = false
+		runtimeerror.HadError = false
+		semanticerror.HadError = false
 	}
 }
 
@@ -51,7 +55,11 @@ func run(src string, env *env.Environment) {
 	if parseerror.HadError {
 		return
 	}
-	interpreter.Interpret(statements, env)
+	locals, err := semantic.Resolve(statements)
+	if err != nil || semanticerror.HadError {
+		return
+	}
+	interpreter.Interpret(statements, env, locals)
 }
 
 func main() {

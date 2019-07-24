@@ -5,6 +5,7 @@ import (
 	"golox/env"
 	"golox/parser"
 	"golox/scanner"
+	"golox/semantic"
 	"golox/token"
 	"math"
 	"strings"
@@ -41,7 +42,7 @@ func TestEvalLiteral(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -76,7 +77,7 @@ func TestEvalUnary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -121,7 +122,7 @@ func TestEvalBinary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -153,7 +154,7 @@ func TestEvalBinaryPrecedence(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -182,7 +183,7 @@ func TestEvalTernary(t *testing.T) {
 			t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 		}
 
-		result, _ := Eval(exprStmt.Expression, env.NewGlobal())
+		result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
 		testLiteralEquality(result, test.expected, t)
 	}
 }
@@ -245,7 +246,8 @@ func TestEnvironment(t *testing.T) {
 	statements := parser.Parse()
 
 	env := GlobalEnv
-	Interpret(statements, env)
+	locals, _ := semantic.Resolve(statements)
+	Interpret(statements, env, locals)
 
 	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
 		t.Fatalf("Expected variable 'a' in env")
@@ -279,7 +281,8 @@ func TestEvalAssignment(t *testing.T) {
 	statements := parser.Parse()
 
 	env := env.NewGlobal()
-	Interpret(statements, env)
+	locals, _ := semantic.Resolve(statements)
+	Interpret(statements, env, locals)
 
 	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
 		t.Fatalf("Expected variable 'a' in env")
@@ -333,8 +336,13 @@ func TestEvalWhileStatement(t *testing.T) {
 		out := &strings.Builder{}
 		options.Writer = out
 		env := env.NewGlobal()
+
+		GlobalEnv = env
+		defer ResetGlobalEnv()
+		locals, _ := semantic.Resolve(statements)
+
 		for _, stmt := range statements {
-			_, err := Eval(stmt, env)
+			_, err := Eval(stmt, env, locals)
 			if err != nil {
 				t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
 			}
@@ -368,7 +376,13 @@ func TestEvalUserFunctions(t *testing.T) {
 
 		out := &strings.Builder{}
 		options.Writer = out
-		Interpret(statements, GlobalEnv)
+
+		env := env.NewGlobal()
+		GlobalEnv = env
+		defer ResetGlobalEnv()
+		locals, _ := semantic.Resolve(statements)
+
+		Interpret(statements, env, locals)
 
 		outStr := strings.TrimSuffix(out.String(), "\n")
 		if outStr != test.expectedOutput {
@@ -419,7 +433,8 @@ func TestEvalBreakContinue(t *testing.T) {
 
 		out := &strings.Builder{}
 		options.Writer = out
-		Interpret(statements, GlobalEnv)
+		locals, _ := semantic.Resolve(statements)
+		Interpret(statements, GlobalEnv, locals)
 
 		outStr := strings.TrimSuffix(out.String(), "\n")
 		if outStr != test.expectedOutput {
@@ -435,7 +450,7 @@ func TestEvalReturn(t *testing.T) {
 	}{
 		{`fun fib(n) {
 			if (n <= 1) return n;
-			return fib(n-2) + fib(n-1);
+			return fib(n-1) + fib(n-2);
 		}
 		
 		print fib(33);
@@ -450,7 +465,8 @@ func TestEvalReturn(t *testing.T) {
 
 		out := &strings.Builder{}
 		options.Writer = out
-		Interpret(statements, GlobalEnv)
+		locals, _ := semantic.Resolve(statements)
+		Interpret(statements, GlobalEnv, locals)
 
 		outStr := strings.TrimSuffix(out.String(), "\n")
 		if outStr != test.expectedOutput {
@@ -473,7 +489,7 @@ func TestEvalGlobals(t *testing.T) {
 		statements := p.Parse()
 
 		e, _ := statements[0].(*ast.Expression)
-		v, _ := Eval(e.Expression, GlobalEnv)
+		v, _ := Eval(e.Expression, GlobalEnv, nil)
 
 		if v.(int) < 0 || v.(int) > 59 {
 			t.Errorf("Expected a number in [0, 59]")
@@ -514,8 +530,13 @@ func TestEvalIfStatement(t *testing.T) {
 		out := &strings.Builder{}
 		options.Writer = out
 		env := env.NewGlobal()
+
+		GlobalEnv = env
+		defer ResetGlobalEnv()
+		locals, _ := semantic.Resolve(statements)
+
 		for _, stmt := range statements {
-			_, err := Eval(stmt, env)
+			_, err := Eval(stmt, env, locals)
 			if err != nil {
 				t.Errorf("Runtime error when evaluating if-statement: %s", err.Error())
 			}
@@ -549,7 +570,7 @@ func TestEvalLogicalOperators(t *testing.T) {
 		options.Writer = out
 		env := env.NewGlobal()
 		for _, stmt := range statements {
-			_, err := Eval(stmt, env)
+			_, err := Eval(stmt, env, nil)
 			if err != nil {
 				t.Errorf("Runtime error when evaluating logical operator: %s", err.Error())
 			}
@@ -559,5 +580,59 @@ func TestEvalLogicalOperators(t *testing.T) {
 		if outStr != test.expectedOutput {
 			t.Errorf("Expected <%s>. Got <%s>", test.expectedOutput, outStr)
 		}
+	}
+}
+
+func BenchmarkFib33(b *testing.B) {
+	input := `
+		fun fib(n) {
+			if (n <= 1) {
+				return n;
+			}
+			return fib(n-1) + fib(n-2);
+		}
+
+		print fib(33);
+	`
+
+	s := scanner.New(input)
+	tokens := s.ScanTokens()
+	p := parser.New(tokens)
+	statements := p.Parse()
+
+	locals, _ := semantic.Resolve(statements)
+	Interpret(statements, GlobalEnv, locals)
+}
+
+func TestVariableResolution(t *testing.T) {
+	input := `
+	var a = "global";
+	{
+		fun f() {
+			print a;
+		}
+	
+		f();
+		var a = "block";
+		f();
+	}	
+	`
+	s := scanner.New(input)
+	tokens := s.ScanTokens()
+	p := parser.New(tokens)
+	statements := p.Parse()
+
+	locals, err := semantic.Resolve(statements)
+	if err != nil {
+		t.Fatalf("Resolving declarations failed. Got=%q", err.Error())
+	}
+
+	out := &strings.Builder{}
+	options.Writer = out
+	Interpret(statements, GlobalEnv, locals)
+
+	outStr := strings.TrimSuffix(out.String(), "\n")
+	if outStr != "global\nglobal" {
+		t.Errorf("Expected <%s>. Got <%s>", "global\nglobal", outStr)
 	}
 }

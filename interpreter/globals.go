@@ -7,6 +7,7 @@ import (
 
 // GlobalEnv is the global environment
 var GlobalEnv = env.NewGlobal()
+var globals = GlobalEnv
 
 func init() {
 	GlobalEnv.Define("clock", &NativeFunction{
@@ -15,4 +16,9 @@ func init() {
 			return time.Now().Second(), nil
 		},
 	})
+}
+
+// ResetGlobalEnv resets the GlobalEnv to its original reference
+func ResetGlobalEnv() {
+	GlobalEnv = globals
 }
