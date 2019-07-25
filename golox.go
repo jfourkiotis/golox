@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"golox/ast"
 	"golox/env"
 	"golox/interpreter"
 	"golox/parseerror"
@@ -55,9 +56,22 @@ func run(src string, env *env.Environment) {
 	if parseerror.HadError {
 		return
 	}
-	locals, err := semantic.Resolve(statements)
+	locals, unused, err := semantic.Resolve(statements)
 	if err != nil || semanticerror.HadError {
 		fmt.Println(err.Error())
+		return
+	} else if len(unused) != 0 {
+		for stmt := range unused {
+			switch n := stmt.(type) {
+			case *ast.Var:
+				fmt.Fprintf(os.Stdout, "Unused variable %q [Line: %d]\n", n.Name.Lexeme, n.Name.Line)
+			case *ast.Function:
+				fmt.Fprintf(os.Stdout, "Unused function %q [Line: %d]\n", n.Name.Lexeme, n.Name.Line)
+			default:
+				panic(fmt.Sprintf("Unexpected ast.Node type %T\n", stmt))
+			}
+		}
+		err = semanticerror.MakeSemanticError(fmt.Sprintf("%d unused local variables/functions found", len(unused)))
 		return
 	}
 	interpreter.Interpret(statements, env, locals)

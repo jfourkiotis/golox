@@ -194,7 +194,7 @@ func TestEnvironment(t *testing.T) {
 	statements := parser.Parse()
 
 	env := GlobalEnv
-	locals, _ := semantic.Resolve(statements)
+	locals, _, _ := semantic.Resolve(statements)
 	Interpret(statements, env, locals)
 
 	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
@@ -229,7 +229,7 @@ func TestEvalAssignment(t *testing.T) {
 	statements := parser.Parse()
 
 	env := env.NewGlobal()
-	locals, _ := semantic.Resolve(statements)
+	locals, _, _ := semantic.Resolve(statements)
 	Interpret(statements, env, locals)
 
 	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
@@ -261,7 +261,7 @@ func testInterpreterOutput(input string, expected string, t *testing.T) {
 
 	GlobalEnv = env
 	defer ResetGlobalEnv()
-	locals, _ := semantic.Resolve(statements)
+	locals, _, _ := semantic.Resolve(statements)
 
 	Interpret(statements, GlobalEnv, locals)
 
@@ -462,7 +462,7 @@ func BenchmarkFib33(b *testing.B) {
 	p := parser.New(tokens)
 	statements := p.Parse()
 
-	locals, _ := semantic.Resolve(statements)
+	locals, _, _ := semantic.Resolve(statements)
 	Interpret(statements, GlobalEnv, locals)
 }
 
