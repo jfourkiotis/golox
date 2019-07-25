@@ -10,3 +10,4 @@ Current status:
 * ternary operator (`?:`)
 * power operator (`**`, right associative)
 * uninitialized variable access is a runtime error
+* unused local variables and functions is an error
