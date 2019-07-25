@@ -1,0 +1,13 @@
+{
+    var a = 5;
+    var b = 10; // unused
+
+    fun f() {
+        var c; // unused
+    }
+
+    //f();
+
+    print a;
+}
+
