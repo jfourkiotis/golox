@@ -8,7 +8,7 @@ import (
 
 // Node is the root class of AST nodes
 type Node interface {
-	ToString() string
+	String() string
 }
 
 // Expr is the root class of expression nodes
@@ -24,15 +24,15 @@ type Binary struct {
 	Right    Expr
 }
 
-// ToString pretty prints the operator
-func (b *Binary) ToString() string {
+// String pretty prints the operator
+func (b *Binary) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString(b.Operator.Lexeme)
 	sb.WriteString(" ")
-	sb.WriteString(b.Left.ToString())
+	sb.WriteString(b.Left.String())
 	sb.WriteString(" ")
-	sb.WriteString(b.Right.ToString())
+	sb.WriteString(b.Right.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -43,11 +43,11 @@ type Grouping struct {
 	Expression Expr
 }
 
-// ToString pretty prints the expression grouping
-func (g *Grouping) ToString() string {
+// String pretty prints the expression grouping
+func (g *Grouping) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
-	sb.WriteString(g.Expression.ToString())
+	sb.WriteString(g.Expression.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -58,8 +58,8 @@ type Literal struct {
 	Value interface{}
 }
 
-// ToString pretty prints the literal
-func (l *Literal) ToString() string {
+// String pretty prints the literal
+func (l *Literal) String() string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("%v", l.Value))
 	return sb.String()
@@ -72,13 +72,13 @@ type Unary struct {
 	Right    Expr
 }
 
-// ToString pretty prints the unary operator
-func (u *Unary) ToString() string {
+// String pretty prints the unary operator
+func (u *Unary) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString(u.Operator.Lexeme)
 	sb.WriteString(" ")
-	sb.WriteString(u.Right.ToString())
+	sb.WriteString(u.Right.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -93,19 +93,19 @@ type Ternary struct {
 	Else      Expr
 }
 
-// ToString pretty prints the unary operator
-func (t *Ternary) ToString() string {
+// String pretty prints the unary operator
+func (t *Ternary) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
-	sb.WriteString(t.Condition.ToString())
+	sb.WriteString(t.Condition.String())
 	sb.WriteString(" ")
 	sb.WriteString(t.QMark.Lexeme)
 	sb.WriteString(" ")
-	sb.WriteString(t.Then.ToString())
+	sb.WriteString(t.Then.String())
 	sb.WriteString(" ")
 	sb.WriteString(t.Colon.Lexeme)
 	sb.WriteString(" ")
-	sb.WriteString(t.Else.ToString())
+	sb.WriteString(t.Else.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -120,15 +120,15 @@ type Assign struct {
 	Value Expr
 }
 
-// ToString pretty prints the assignment statement
-func (a *Assign) ToString() string {
+// String pretty prints the assignment statement
+func (a *Assign) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("=")
 	sb.WriteString(" ")
 	sb.WriteString(a.Name.Lexeme)
 	sb.WriteString(" ")
-	sb.WriteString(a.Value.ToString())
+	sb.WriteString(a.Value.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -140,8 +140,8 @@ type Variable struct {
 	Name token.Token
 }
 
-// ToString pretty prints the assignment expression
-func (v *Variable) ToString() string {
+// String pretty prints the assignment expression
+func (v *Variable) String() string {
 	var sb strings.Builder
 	sb.WriteString(v.Name.Lexeme)
 	return sb.String()
@@ -161,12 +161,12 @@ type Block struct {
 	Statements []Stmt
 }
 
-// ToString pretty prints the block statement
-func (b *Block) ToString() string {
+// String pretty prints the block statement
+func (b *Block) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	for _, stmt := range b.Statements {
-		sb.WriteString(stmt.ToString())
+		sb.WriteString(stmt.String())
 	}
 	sb.WriteString(")")
 	return sb.String()
@@ -178,11 +178,11 @@ type Expression struct {
 	Expression Expr
 }
 
-// ToString pretty prints the expression statement
-func (e *Expression) ToString() string {
+// String pretty prints the expression statement
+func (e *Expression) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
-	sb.WriteString(e.Expression.ToString())
+	sb.WriteString(e.Expression.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -194,13 +194,13 @@ type Print struct {
 	Expression Expr
 }
 
-// ToString pretty prints the print statement
-func (p *Print) ToString() string {
+// String pretty prints the print statement
+func (p *Print) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("print")
 	sb.WriteString(" ")
-	sb.WriteString(p.Expression.ToString())
+	sb.WriteString(p.Expression.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -213,8 +213,8 @@ type Var struct {
 	Initializer Expr
 }
 
-// ToString pretty prints the var declaration
-func (v *Var) ToString() string {
+// String pretty prints the var declaration
+func (v *Var) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("var")
@@ -222,7 +222,7 @@ func (v *Var) ToString() string {
 	sb.WriteString(v.Name.Lexeme)
 	sb.WriteString(" ")
 	if v.Initializer != nil {
-		sb.WriteString(v.Initializer.ToString())
+		sb.WriteString(v.Initializer.String())
 	} else {
 		sb.WriteString("nil")
 	}
@@ -238,17 +238,17 @@ type If struct {
 	ElseBranch Stmt
 }
 
-// ToString pretty prints the if statement
-func (i *If) ToString() string {
+// String pretty prints the if statement
+func (i *If) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("if")
 	sb.WriteString(" ")
-	sb.WriteString(i.Condition.ToString())
+	sb.WriteString(i.Condition.String())
 	sb.WriteString(" ")
-	sb.WriteString(i.ThenBranch.ToString())
+	sb.WriteString(i.ThenBranch.String())
 	sb.WriteString(" ")
-	sb.WriteString(i.ElseBranch.ToString())
+	sb.WriteString(i.ElseBranch.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -260,15 +260,15 @@ type While struct {
 	Statement Stmt
 }
 
-// ToString pretty prints the while statement
-func (w *While) ToString() string {
+// String pretty prints the while statement
+func (w *While) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("while")
 	sb.WriteString(" ")
-	sb.WriteString(w.Condition.ToString())
+	sb.WriteString(w.Condition.String())
 	sb.WriteString(" ")
-	sb.WriteString(w.Statement.ToString())
+	sb.WriteString(w.Statement.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -281,15 +281,15 @@ type Logical struct {
 	Right    Expr
 }
 
-// ToString pretty prints the unary operator
-func (l *Logical) ToString() string {
+// String pretty prints the unary operator
+func (l *Logical) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString(l.Operator.Lexeme)
 	sb.WriteString(" ")
-	sb.WriteString(l.Left.ToString())
+	sb.WriteString(l.Left.String())
 	sb.WriteString(" ")
-	sb.WriteString(l.Right.ToString())
+	sb.WriteString(l.Right.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -301,16 +301,16 @@ type Call struct {
 	Arguments []Expr
 }
 
-// ToString pretty prints the call operator
-func (c *Call) ToString() string {
+// String pretty prints the call operator
+func (c *Call) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("call")
 	sb.WriteString(" ")
-	sb.WriteString(c.Callee.ToString())
+	sb.WriteString(c.Callee.String())
 	sb.WriteString(" ")
 	for _, e := range c.Arguments {
-		sb.WriteString(e.ToString())
+		sb.WriteString(e.String())
 		sb.WriteString(" ")
 	}
 	sb.WriteString(")")
@@ -324,8 +324,8 @@ type Function struct {
 	Body   []Stmt
 }
 
-// ToString pretty prints the function
-func (f *Function) ToString() string {
+// String pretty prints the function
+func (f *Function) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("fun")
@@ -341,7 +341,7 @@ func (f *Function) ToString() string {
 	sb.WriteString(" ")
 	sb.WriteString("(")
 	for _, stmt := range f.Body {
-		sb.WriteString(stmt.ToString())
+		sb.WriteString(stmt.String())
 		sb.WriteString(" ")
 	}
 	sb.WriteString(")")
@@ -356,13 +356,13 @@ type Return struct {
 	Value   Expr
 }
 
-// ToString pretty prints the function
-func (r *Return) ToString() string {
+// String pretty prints the function
+func (r *Return) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("return")
 	sb.WriteString(" ")
-	sb.WriteString(r.Value.ToString())
+	sb.WriteString(r.Value.String())
 	sb.WriteString(" ")
 	sb.WriteString(")")
 	return sb.String()
@@ -374,8 +374,8 @@ type Break struct {
 	Token token.Token
 }
 
-// ToString pretty prints the function
-func (b *Break) ToString() string {
+// String pretty prints the function
+func (b *Break) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("break")
@@ -390,8 +390,8 @@ type Continue struct {
 	Increment Expr
 }
 
-// ToString pretty prints the function
-func (c *Continue) ToString() string {
+// String pretty prints the function
+func (c *Continue) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("continue")

@@ -469,8 +469,8 @@ func TestParseFunctionDefinition(t *testing.T) {
 
 		testExpectStatementsLen(statements, 1, t)
 
-		if statements[0].ToString() != test.expectedAST.ToString() {
-			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].ToString(), test.expectedAST.ToString())
+		if statements[0].String() != test.expectedAST.String() {
+			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), test.expectedAST.String())
 		}
 	}
 }
@@ -504,8 +504,8 @@ func TestParseCallExpression(t *testing.T) {
 
 		testExpectStatementsLen(statements, 1, t)
 
-		if statements[0].ToString() != test.expectedAST.ToString() {
-			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].ToString(), test.expectedAST.ToString())
+		if statements[0].String() != test.expectedAST.String() {
+			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), test.expectedAST.String())
 		}
 	}
 }
@@ -549,8 +549,8 @@ func TestParseLogicalOperators(t *testing.T) {
 
 		testExpectStatementsLen(statements, 1, t)
 
-		if statements[0].ToString() != test.expectedAST.ToString() {
-			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].ToString(), test.expectedAST.ToString())
+		if statements[0].String() != test.expectedAST.String() {
+			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), test.expectedAST.String())
 		}
 	}
 
@@ -599,8 +599,8 @@ func TestParseWhileStatement(t *testing.T) {
 		statements := p.Parse()
 
 		testExpectStatementsLen(statements, 1, t)
-		if statements[0].ToString() != test.expectedAST.ToString() {
-			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].ToString(), test.expectedAST.ToString())
+		if statements[0].String() != test.expectedAST.String() {
+			t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), test.expectedAST.String())
 		}
 	}
 }
