@@ -25,12 +25,12 @@ func TestVariableResolution(t *testing.T) {
 	p := parser.New(tokens)
 	statements := p.Parse()
 
-	locals, _, err := Resolve(statements)
+	resolution, err := Resolve(statements)
 	if err != nil {
 		t.Fatalf("Resolving declarations failed. Got=%q", err.Error())
 	}
 
-	for e, i := range locals {
+	for e, i := range resolution.Locals {
 		if variable, ok := e.(*ast.Variable); ok && variable.Name.Lexeme == "a" {
 			if i != 2 {
 				t.Errorf("Variable %s was declared in depth -%d. Got= -%d", variable.Name.Lexeme, 2, i)
@@ -48,7 +48,7 @@ func TestReturnResolution(t *testing.T) {
 	p := parser.New(tokens)
 	statements := p.Parse()
 
-	_, _, err := Resolve(statements)
+	_, err := Resolve(statements)
 	if err == nil {
 		t.Errorf("top-level return not detected.")
 	} else if err.Error() != "Cannot return from top-level code." {
@@ -96,10 +96,10 @@ func TestUnusedLocalVariables(t *testing.T) {
 		p := parser.New(tokens)
 		statements := p.Parse()
 
-		_, unused, _ := Resolve(statements)
+		resolution, _ := Resolve(statements)
 
-		if len(unused) != test.expectedUnused {
-			t.Fatalf("Expected %d unused variables. Got=%d", test.expectedUnused, len(unused))
+		if len(resolution.Locals) != test.expectedUnused {
+			t.Fatalf("Expected %d unused variables. Got=%d", test.expectedUnused, len(resolution.Unused))
 		}
 	}
 }

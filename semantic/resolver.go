@@ -27,13 +27,18 @@ type vInfo struct {
 // rScope represents a Lox scope
 type rScope = map[string]*vInfo
 
+// Resolution keeps important information about local variables and functions
+type Resolution struct {
+	Locals Locals
+	Unused Unused
+}
+
 // Resolve performs name resolution to the given statements
-func Resolve(statements []ast.Stmt) (Locals, Unused, error) {
-	locals := make(Locals)
-	unused := make(Unused)
+func Resolve(statements []ast.Stmt) (Resolution, error) {
+	resolution := Resolution{Locals: make(Locals), Unused: make(Unused)}
 	resolver := &Resolver{scopes: make([]rScope, 0), currentFunction: ftNone}
-	err := resolver.resolveStatements(statements, locals, unused)
-	return locals, unused, err
+	err := resolver.resolveStatements(statements, resolution.Locals, resolution.Unused)
+	return resolution, err
 }
 
 const (

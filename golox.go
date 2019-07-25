@@ -56,12 +56,12 @@ func run(src string, env *env.Environment) {
 	if parseerror.HadError {
 		return
 	}
-	locals, unused, err := semantic.Resolve(statements)
+	resolution, err := semantic.Resolve(statements)
 	if err != nil || semanticerror.HadError {
 		fmt.Println(err.Error())
 		return
-	} else if len(unused) != 0 {
-		for stmt := range unused {
+	} else if len(resolution.Unused) != 0 {
+		for stmt := range resolution.Unused {
 			switch n := stmt.(type) {
 			case *ast.Var:
 				fmt.Fprintf(os.Stdout, "Unused variable %q [Line: %d]\n", n.Name.Lexeme, n.Name.Line)
@@ -71,10 +71,10 @@ func run(src string, env *env.Environment) {
 				panic(fmt.Sprintf("Unexpected ast.Node type %T\n", stmt))
 			}
 		}
-		err = semanticerror.MakeSemanticError(fmt.Sprintf("%d unused local variables/functions found", len(unused)))
+		err = semanticerror.MakeSemanticError(fmt.Sprintf("%d unused local variables/functions found", len(resolution.Unused)))
 		return
 	}
-	interpreter.Interpret(statements, env, locals)
+	interpreter.Interpret(statements, env, resolution.Locals)
 }
 
 func main() {
