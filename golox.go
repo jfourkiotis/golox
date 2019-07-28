@@ -74,7 +74,7 @@ func run(src string, env *env.Environment) {
 		err = semanticerror.MakeSemanticError(fmt.Sprintf("%d unused local variables/functions found", len(resolution.Unused)))
 		return
 	}
-	interpreter.Interpret(statements, env, resolution.Locals)
+	interpreter.Interpret(statements, env, resolution)
 }
 
 func main() {

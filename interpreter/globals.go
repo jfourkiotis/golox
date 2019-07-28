@@ -15,7 +15,7 @@ func init() {
 		nativeCall: func(args []interface{}) (interface{}, error) {
 			return time.Now().Second(), nil
 		},
-	})
+	}, -1)
 }
 
 // ResetGlobalEnv resets the GlobalEnv to its original reference

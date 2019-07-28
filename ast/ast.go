@@ -116,8 +116,10 @@ func (t *Ternary) String() string {
 // name = value
 type Assign struct {
 	Expr
-	Name  token.Token
-	Value Expr
+	Name     token.Token
+	Value    Expr
+	EnvIndex int
+	EnvDepth int
 }
 
 // String pretty prints the assignment statement
@@ -137,7 +139,9 @@ func (a *Assign) String() string {
 // print x
 type Variable struct {
 	Expr
-	Name token.Token
+	Name     token.Token
+	EnvIndex int
+	EnvDepth int
 }
 
 // String pretty prints the assignment expression
@@ -159,6 +163,7 @@ type Stmt interface {
 type Block struct {
 	Stmt
 	Statements []Stmt
+	EnvSize    int
 }
 
 // String pretty prints the block statement
@@ -211,6 +216,7 @@ type Var struct {
 	Stmt
 	Name        token.Token
 	Initializer Expr
+	EnvIndex    int
 }
 
 // String pretty prints the var declaration
@@ -249,6 +255,38 @@ func (i *If) String() string {
 	sb.WriteString(i.ThenBranch.String())
 	sb.WriteString(" ")
 	sb.WriteString(i.ElseBranch.String())
+	sb.WriteString(")")
+	return sb.String()
+}
+
+// For ...
+type For struct {
+	Stmt
+	Initializer Expr
+	Condition   Expr
+	Increment   Expr
+	Statement   Stmt
+}
+
+// String pretty prints the for statement
+func (f *For) String() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString("for")
+	sb.WriteString(" ")
+	sb.WriteString("(")
+	sb.WriteString(f.Initializer.String())
+	sb.WriteString(")")
+	sb.WriteString(" ")
+	sb.WriteString("(")
+	sb.WriteString(f.Condition.String())
+	sb.WriteString(")")
+	sb.WriteString(" ")
+	sb.WriteString("(")
+	sb.WriteString(f.Increment.String())
+	sb.WriteString(")")
+	sb.WriteString(" ")
+	sb.WriteString(f.Statement.String())
 	sb.WriteString(")")
 	return sb.String()
 }
@@ -319,9 +357,11 @@ func (c *Call) String() string {
 
 // Function is the function definition node
 type Function struct {
-	Name   token.Token
-	Params []token.Token
-	Body   []Stmt
+	Name     token.Token
+	Params   []token.Token
+	Body     []Stmt
+	EnvSize  int
+	EnvIndex int
 }
 
 // String pretty prints the function
@@ -386,8 +426,7 @@ func (b *Break) String() string {
 // Continue is used to return from a function
 type Continue struct {
 	Stmt
-	Token     token.Token
-	Increment Expr
+	Token token.Token
 }
 
 // String pretty prints the function

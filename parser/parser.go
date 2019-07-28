@@ -56,15 +56,14 @@ primary    -> NUMBER | STRING | "false" | "true" | "nil"
 // Parser will transform an array of tokens to an AST.
 // Use parser.New to create a new Parser. Do not create a Parser directly
 type Parser struct {
-	tokens        []token.Token
-	current       int
-	inloop        bool     // used when checking stray break/continue statements
-	loopIncrement ast.Expr // the current loop increment expression, used to parse continue statements
+	tokens  []token.Token
+	current int
+	inloop  bool // used when checking stray break/continue statements
 }
 
 // New creates a new parser
 func New(tokens []token.Token) Parser {
-	return Parser{tokens, 0, false, nil}
+	return Parser{tokens, 0, false}
 }
 
 // Parse is the driver function that begins parsing
@@ -152,7 +151,7 @@ func (p *Parser) funDeclaration(kind string) (ast.Stmt, error) {
 		return nil, err
 	}
 
-	return &ast.Function{Name: name, Params: parameters, Body: body}, nil
+	return &ast.Function{Name: name, Params: parameters, Body: body, EnvIndex: -1}, nil
 }
 
 func (p *Parser) varDeclaration() (ast.Stmt, error) {
@@ -172,7 +171,7 @@ func (p *Parser) varDeclaration() (ast.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ast.Var{Name: name, Initializer: initializer}, nil
+	return &ast.Var{Name: name, Initializer: initializer, EnvIndex: -1}, nil
 }
 
 func (p *Parser) statement() (ast.Stmt, error) {
@@ -221,7 +220,7 @@ func (p *Parser) continueStatement() (ast.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ast.Continue{Token: tok, Increment: p.loopIncrement}, nil
+	return &ast.Continue{Token: tok}, nil
 }
 
 func (p *Parser) forStatement() (ast.Stmt, error) {
@@ -269,10 +268,6 @@ func (p *Parser) forStatement() (ast.Stmt, error) {
 		}
 	}
 
-	oldIncrement := p.loopIncrement
-	defer p.resetLoopIncrement(oldIncrement)
-	p.loopIncrement = increment
-
 	_, err = p.consume(token.RIGHTPAREN, "Expected ')' after for clauses.")
 	if err != nil {
 		return nil, err
@@ -282,27 +277,7 @@ func (p *Parser) forStatement() (ast.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	// desugaring to a while-loop
-	if increment != nil {
-		statements := make([]ast.Stmt, 0)
-		statements = append(statements, body)
-		statements = append(statements, increment)
-		body = &ast.Block{Statements: statements}
-	}
-
-	if condition == nil {
-		condition = &ast.Literal{Value: true}
-	}
-	body = &ast.While{Condition: condition, Statement: body}
-
-	if initializer != nil {
-		statements := make([]ast.Stmt, 0)
-		statements = append(statements, initializer)
-		statements = append(statements, body)
-		body = &ast.Block{Statements: statements}
-	}
-
-	return body, nil
+	return &ast.For{Initializer: initializer, Condition: condition, Increment: increment, Statement: body}, nil
 }
 
 func (p *Parser) whileStatement() (ast.Stmt, error) {
@@ -442,7 +417,7 @@ func (p *Parser) assignment() (ast.Expr, error) {
 		}
 
 		if variable, ok := expr.(*ast.Variable); ok {
-			return &ast.Assign{Name: variable.Name, Value: value}, nil
+			return &ast.Assign{Name: variable.Name, Value: value, EnvIndex: -1, EnvDepth: -1}, nil
 		}
 		return nil, parseerror.MakeError(equals, "Invalid assignment target.")
 	}
@@ -673,7 +648,7 @@ func (p *Parser) primary() (ast.Expr, error) {
 		}
 		return &ast.Grouping{Expression: expr}, nil
 	} else if p.match(token.IDENTIFIER) {
-		return &ast.Variable{Name: p.previous()}, nil
+		return &ast.Variable{Name: p.previous(), EnvIndex: -1, EnvDepth: -1}, nil
 	}
 	return nil, parseerror.MakeError(p.peek(), "Expected expression")
 }
@@ -740,8 +715,4 @@ func (p *Parser) synchronize() {
 
 func (p *Parser) resetLoop(val bool) {
 	p.inloop = val
-}
-
-func (p *Parser) resetLoopIncrement(increment ast.Expr) {
-	p.loopIncrement = increment
 }

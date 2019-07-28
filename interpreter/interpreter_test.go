@@ -31,7 +31,7 @@ func testLiteral(input string, expected interface{}, t *testing.T) {
 		t.Fatalf("Expected *ast.ExpressionStmt. Got=%T", statements[0])
 	}
 
-	result, _ := Eval(exprStmt.Expression, env.NewGlobal(), nil)
+	result, _ := Eval(exprStmt.Expression, env.NewGlobal(), semantic.NewResolution())
 	testLiteralEquality(result, expected, t)
 }
 
@@ -195,19 +195,19 @@ func TestEnvironment(t *testing.T) {
 
 	env := GlobalEnv
 	resolution, _ := semantic.Resolve(statements)
-	Interpret(statements, env, resolution.Locals)
+	Interpret(statements, env, resolution)
 
-	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
+	if a, err := env.Get(token.Token{Lexeme: "a"}, -1); err != nil {
 		t.Fatalf("Expected variable 'a' in env")
 	} else if a.(float64) != 5.0 {
 		t.Errorf("Expected a = 5. Got %v", a.(float64))
 	}
-	if b, err := env.Get(token.Token{Lexeme: "b"}); err != nil {
+	if b, err := env.Get(token.Token{Lexeme: "b"}, -1); err != nil {
 		t.Fatalf("Expected variable 'b' in env")
 	} else if b.(float64) != 10.0 {
 		t.Errorf("Expected b = 10. Got %v", b.(float64))
 	}
-	if c, err := env.Get(token.Token{Lexeme: "c"}); err != nil {
+	if c, err := env.Get(token.Token{Lexeme: "c"}, -1); err != nil {
 		t.Fatalf("Expected variable 'c' in env")
 	} else if c.(float64) != 50.0 {
 		t.Errorf("Expected c = 50. Got %v", c.(float64))
@@ -230,19 +230,19 @@ func TestEvalAssignment(t *testing.T) {
 
 	env := env.NewGlobal()
 	resolution, _ := semantic.Resolve(statements)
-	Interpret(statements, env, resolution.Locals)
+	Interpret(statements, env, resolution)
 
-	if a, err := env.Get(token.Token{Lexeme: "a"}); err != nil {
+	if a, err := env.Get(token.Token{Lexeme: "a"}, -1); err != nil {
 		t.Fatalf("Expected variable 'a' in env")
 	} else if a.(float64) != 2000.0 {
 		t.Errorf("Expected a = 2000. Got %v", a.(float64))
 	}
-	if b, err := env.Get(token.Token{Lexeme: "b"}); err != nil {
+	if b, err := env.Get(token.Token{Lexeme: "b"}, -1); err != nil {
 		t.Fatalf("Expected variable 'b' in env")
 	} else if b.(float64) != 200.0 {
 		t.Errorf("Expected b = 200. Got %v", b.(float64))
 	}
-	if c, err := env.Get(token.Token{Lexeme: "c"}); err != nil {
+	if c, err := env.Get(token.Token{Lexeme: "c"}, -1); err != nil {
 		t.Fatalf("Expected variable 'c' in env")
 	} else if c.(float64) != 20.0 {
 		t.Errorf("Expected c = 20. Got %v", c.(float64))
@@ -263,7 +263,7 @@ func testInterpreterOutput(input string, expected string, t *testing.T) {
 	defer ResetGlobalEnv()
 	resolution, _ := semantic.Resolve(statements)
 
-	Interpret(statements, GlobalEnv, resolution.Locals)
+	Interpret(statements, GlobalEnv, resolution)
 
 	outStr := strings.TrimSuffix(out.String(), "\n")
 	if outStr != expected {
@@ -326,32 +326,31 @@ func TestEvalBreakContinue(t *testing.T) {
 		expectedOutput string
 	}{
 		{`var a = 0;
-		while (a < 10) {
-			if (a == 8) break;
-			a = a + 1;
-		}
-		print a;
-		`, "8"},
-		{`
-		var a = 1;
-		while (a < 10) {
-			a = a + 1;
-			if (a < 9) {
-				continue;
+			while (a < 10) {
+				if (a == 8) break;
+				a = a + 1;
 			}
 			print a;
-			break;
-		}
-		`, "9"},
+			`, "8"},
 		{`
-		for (var a = 1; a < 10; a = a + 1) {
-			if (a < 9) {
-				continue;
+			var a = 1;
+			while (a < 10) {
+				a = a + 1;
+				if (a < 9) {
+					continue;
+				}
+				print a;
+				break;
 			}
-			print a;
-			break;
-		}
-		`, "9"},
+			`, "9"},
+		{`
+			for (var a = 1; a < 10; a = a + 1) {
+				if (a < 9) {
+					continue;
+				}
+				print a;
+			}
+			`, "9"},
 	}
 
 	for _, test := range tests {
@@ -364,12 +363,15 @@ func TestEvalReturn(t *testing.T) {
 		input          string
 		expectedOutput string
 	}{
-		{`fun fib(n) {
-			if (n <= 1) return n;
-			return fib(n-1) + fib(n-2);
-		}
+		{`
+		{
+			fun fib(n) {
+				if (n <= 1) return n;
+				return fib(n-1) + fib(n-2);
+			}
 		
-		print fib(33);
+			print fib(33);
+		}
 		`, "3.524578e+06"},
 	}
 
@@ -392,7 +394,7 @@ func TestEvalGlobals(t *testing.T) {
 		statements := p.Parse()
 
 		e, _ := statements[0].(*ast.Expression)
-		v, _ := Eval(e.Expression, GlobalEnv, nil)
+		v, _ := Eval(e.Expression, GlobalEnv, semantic.NewResolution())
 
 		if v.(int) < 0 || v.(int) > 59 {
 			t.Errorf("Expected a number in [0, 59]")
@@ -446,7 +448,7 @@ func TestEvalLogicalOperators(t *testing.T) {
 }
 
 func BenchmarkFib33(b *testing.B) {
-	input := `
+	input := `{
 		fun fib(n) {
 			if (n <= 1) {
 				return n;
@@ -454,7 +456,7 @@ func BenchmarkFib33(b *testing.B) {
 			return fib(n-1) + fib(n-2);
 		}
 
-		print fib(33);
+		print fib(33);}
 	`
 
 	s := scanner.New(input)
@@ -463,7 +465,7 @@ func BenchmarkFib33(b *testing.B) {
 	statements := p.Parse()
 
 	resolution, _ := semantic.Resolve(statements)
-	Interpret(statements, GlobalEnv, resolution.Locals)
+	Interpret(statements, GlobalEnv, resolution)
 }
 
 func TestVariableResolution(t *testing.T) {

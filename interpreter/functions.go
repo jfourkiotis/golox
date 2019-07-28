@@ -42,18 +42,24 @@ type UserFunction struct {
 	Callable
 	Definition *ast.Function
 	Closure    *env.Environment
-	Locals     semantic.Locals
+	Resolution semantic.Resolution
+	envSize    int
+}
+
+// NewUserFunction creates a new UserFunction
+func NewUserFunction(def *ast.Function, closure *env.Environment, res semantic.Resolution, envSize int) *UserFunction {
+	return &UserFunction{Definition: def, Closure: closure, Resolution: res, envSize: envSize}
 }
 
 // Call executes a user-defined Lox function
 func (u *UserFunction) Call(arguments []interface{}) (interface{}, error) {
-	env := env.New(u.Closure)
+	env := env.NewSized(u.Closure, u.envSize)
 	for i, param := range u.Definition.Params {
-		env.Define(param.Lexeme, arguments[i])
+		env.Define(param.Lexeme, arguments[i], i)
 	}
 
 	for _, stmt := range u.Definition.Body {
-		_, err := Eval(stmt, env, u.Locals)
+		_, err := Eval(stmt, env, u.Resolution)
 
 		if err != nil {
 			if r, ok := err.(returnError); ok {

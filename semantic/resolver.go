@@ -10,8 +10,9 @@ import (
 // Unused local variables found by variable resolution
 type Unused = map[ast.Stmt]bool // value is always false
 
-// Locals is the output of the resolve phase
-type Locals = map[ast.Expr]int
+// EnvSize keeps the environment size of each ast.Block & ast.Function
+// nodes
+type EnvSize = map[ast.Stmt]int
 
 const (
 	vDeclared = iota
@@ -19,25 +20,39 @@ const (
 )
 
 type vInfo struct {
+	name   string
 	status int
 	isUsed bool
 	stmt   ast.Stmt
 }
 
 // rScope represents a Lox scope
-type rScope = map[string]*vInfo
+type rScope = []vInfo
+
+func scopeLookup(name string, scope rScope) int {
+	for i := len(scope) - 1; i >= 0; i-- {
+		if name == scope[i].name {
+			return i
+		}
+	}
+	return -1
+}
 
 // Resolution keeps important information about local variables and functions
 type Resolution struct {
-	Locals Locals
 	Unused Unused
+}
+
+// NewResolution creates an empty resolution object
+func NewResolution() Resolution {
+	return Resolution{Unused: make(Unused)}
 }
 
 // Resolve performs name resolution to the given statements
 func Resolve(statements []ast.Stmt) (Resolution, error) {
-	resolution := Resolution{Locals: make(Locals), Unused: make(Unused)}
+	resolution := NewResolution()
 	resolver := &Resolver{scopes: make([]rScope, 0), currentFunction: ftNone}
-	err := resolver.resolveStatements(statements, resolution.Locals, resolution.Unused)
+	err := resolver.resolveStatements(statements, resolution)
 	return resolution, err
 }
 
@@ -52,64 +67,74 @@ type Resolver struct {
 	currentFunction int
 }
 
-func (r *Resolver) resolve(node ast.Node, locals Locals, unused Unused) error {
+func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 	switch n := node.(type) {
 	case *ast.Block:
 		r.pushScope()
-		defer r.popScope(unused)
+		defer r.popScope(n, res)
 		for _, stmt := range n.Statements {
-			if err := r.resolve(stmt, locals, unused); err != nil {
+			if err := r.resolve(stmt, res); err != nil {
 				return err
 			}
 		}
 	case *ast.Var:
-		if err := r.declare(n.Name, n); err != nil {
+		index, err := r.declare(n.Name, n)
+		if err != nil {
 			return nil
 		}
+		n.EnvIndex = index
 		if n.Initializer != nil {
-			if err := r.resolve(n.Initializer, locals, unused); err != nil {
+			if err := r.resolve(n.Initializer, res); err != nil {
 				return err
 			}
 		}
 		r.define(n.Name, n)
 	case *ast.Variable:
 		if len(r.scopes) != 0 {
-			if v, ok := r.scopes[len(r.scopes)-1][n.Name.Lexeme]; ok && v.status == vDeclared {
+			top := r.scopes[len(r.scopes)-1]
+			index := scopeLookup(n.Name.Lexeme, top)
+			if index >= 0 && top[index].status == vDeclared {
 				return semanticerror.MakeSemanticError("Cannot read local variable in its own initializer.")
 			}
 		}
-		r.resolveLocal(n, n.Name, locals, unused)
+		index, depth := r.resolveLocal(n, n.Name, res)
+		n.EnvIndex = index
+		n.EnvDepth = depth
 	case *ast.Assign:
-		if err := r.resolve(n.Value, locals, unused); err != nil {
+		if err := r.resolve(n.Value, res); err != nil {
 			return err
 		}
-		r.resolveLocal(n, n.Name, locals, unused)
+		index, depth := r.resolveLocal(n, n.Name, res)
+		n.EnvIndex = index
+		n.EnvDepth = depth
 	case *ast.Function:
-		if err := r.declare(n.Name, n); err != nil {
+		index, err := r.declare(n.Name, n)
+		if err != nil {
 			return err
 		}
+		n.EnvIndex = index
 		r.define(n.Name, n)
-		if err := r.resolveFunction(n, locals, unused, ftFunction); err != nil {
+		if err := r.resolveFunction(n, res, ftFunction); err != nil {
 			return err
 		}
 	case *ast.Expression:
-		if err := r.resolve(n.Expression, locals, unused); err != nil {
+		if err := r.resolve(n.Expression, res); err != nil {
 			return err
 		}
 	case *ast.If:
-		if err := r.resolve(n.Condition, locals, unused); err != nil {
+		if err := r.resolve(n.Condition, res); err != nil {
 			return err
 		}
-		if err := r.resolve(n.ThenBranch, locals, unused); err != nil {
+		if err := r.resolve(n.ThenBranch, res); err != nil {
 			return err
 		}
 		if n.ElseBranch != nil {
-			if err := r.resolve(n.ElseBranch, locals, unused); err != nil {
+			if err := r.resolve(n.ElseBranch, res); err != nil {
 				return err
 			}
 		}
 	case *ast.Print:
-		if err := r.resolve(n.Expression, locals, unused); err != nil {
+		if err := r.resolve(n.Expression, res); err != nil {
 			return err
 		}
 	case *ast.Return:
@@ -117,63 +142,76 @@ func (r *Resolver) resolve(node ast.Node, locals Locals, unused Unused) error {
 			return semanticerror.MakeSemanticError("Cannot return from top-level code.")
 		}
 		if n.Value != nil {
-			if err := r.resolve(n.Value, locals, unused); err != nil {
+			if err := r.resolve(n.Value, res); err != nil {
 				return err
 			}
 		}
-	case *ast.While:
-		if err := r.resolve(n.Condition, locals, unused); err != nil {
+	case *ast.For:
+		if err := r.resolve(n.Increment, res); err != nil {
 			return err
 		}
-		if err := r.resolve(n.Statement, locals, unused); err != nil {
+		if err := r.resolve(n.Condition, res); err != nil {
+			return err
+		}
+		if err := r.resolve(n.Increment, res); err != nil {
+			return err
+		}
+		if err := r.resolve(n.Statement, res); err != nil {
+			return err
+		}
+	case *ast.While:
+		if err := r.resolve(n.Condition, res); err != nil {
+			return err
+		}
+		if err := r.resolve(n.Statement, res); err != nil {
 			return err
 		}
 	case *ast.Binary:
-		if err := r.resolve(n.Left, locals, unused); err != nil {
+		if err := r.resolve(n.Left, res); err != nil {
 			return err
 		}
-		if err := r.resolve(n.Right, locals, unused); err != nil {
+		if err := r.resolve(n.Right, res); err != nil {
 			return err
 		}
 	case *ast.Call:
-		if err := r.resolve(n.Callee, locals, unused); err != nil {
+		if err := r.resolve(n.Callee, res); err != nil {
 			return err
 		}
 
 		for _, e := range n.Arguments {
-			if err := r.resolve(e, locals, unused); err != nil {
+			if err := r.resolve(e, res); err != nil {
 				return err
 			}
 		}
 	case *ast.Grouping:
-		if err := r.resolve(n.Expression, locals, unused); err != nil {
+		if err := r.resolve(n.Expression, res); err != nil {
 			return err
 		}
 	case *ast.Logical:
-		if err := r.resolve(n.Left, locals, unused); err != nil {
+		if err := r.resolve(n.Left, res); err != nil {
 			return err
 		}
-		if err := r.resolve(n.Right, locals, unused); err != nil {
+		if err := r.resolve(n.Right, res); err != nil {
 			return err
 		}
 	case *ast.Unary:
-		if err := r.resolve(n.Right, locals, unused); err != nil {
+		if err := r.resolve(n.Right, res); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *Resolver) resolveStatements(statements []ast.Stmt, locals Locals, unused Unused) error {
+func (r *Resolver) resolveStatements(statements []ast.Stmt, res Resolution) error {
 	for _, stmt := range statements {
-		if err := r.resolve(stmt, locals, unused); err != nil {
+		if err := r.resolve(stmt, res); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *Resolver) resolveFunction(function *ast.Function, locals Locals, unused Unused, ftype int) error {
+func (r *Resolver) resolveFunction(function *ast.Function, res Resolution, ftype int) error {
 	enclosingFunction := r.currentFunction
 	r.currentFunction = ftype
 
@@ -184,58 +222,70 @@ func (r *Resolver) resolveFunction(function *ast.Function, locals Locals, unused
 	defer resetCurrentFunction()
 
 	r.pushScope()
-	defer r.popScope(unused)
+	defer r.popScope(function, res)
 
 	for _, param := range function.Params {
-		if err := r.declare(param, nil); err != nil {
+		if _, err := r.declare(param, nil); err != nil {
 			return err
 		}
 		r.define(param, nil)
 	}
-	return r.resolveStatements(function.Body, locals, unused)
+	return r.resolveStatements(function.Body, res)
 }
 
-func (r *Resolver) resolveLocal(expr ast.Expr, name token.Token, locals Locals, unused Unused) {
+func (r *Resolver) resolveLocal(expr ast.Expr, name token.Token, res Resolution) (int, int) {
 	for i := len(r.scopes) - 1; i >= 0; i-- {
-		if v, ok := r.scopes[i][name.Lexeme]; ok {
-			locals[expr] = len(r.scopes) - i - 1
-			v.isUsed = true
-			return
+		scope := r.scopes[i]
+		index := scopeLookup(name.Lexeme, scope)
+		if index >= 0 {
+			scope[index].isUsed = true
+			return index, len(r.scopes) - i - 1
 		}
 	}
+	return -1, -1
 }
 
 func (r *Resolver) pushScope() {
-	r.scopes = append(r.scopes, make(rScope))
+	r.scopes = append(r.scopes, make(rScope, 0))
 }
 
-func (r *Resolver) popScope(unused Unused) {
+func (r *Resolver) popScope(stmt ast.Stmt, res Resolution) {
 	top := r.scopes[len(r.scopes)-1]
 	r.scopes = r.scopes[:len(r.scopes)-1]
 	for _, info := range top {
 		// info.node is nil for function parameters
 		if !info.isUsed && info.stmt != nil {
-			unused[info.stmt] = true
+			res.Unused[info.stmt] = true
 		}
+	}
+
+	if block, ok := stmt.(*ast.Block); ok {
+		block.EnvSize = len(top)
+	} else if function, ok := stmt.(*ast.Function); ok {
+		function.EnvSize = len(top)
 	}
 }
 
 // node is nil for function params
-func (r *Resolver) declare(name token.Token, node ast.Node) error {
+func (r *Resolver) declare(name token.Token, node ast.Node) (int, error) {
 	if len(r.scopes) != 0 {
 		scope := r.scopes[len(r.scopes)-1]
-		if _, ok := scope[name.Lexeme]; ok {
-			return semanticerror.MakeSemanticError(
+		index := scopeLookup(name.Lexeme, scope)
+		if index >= 0 {
+			return 0, semanticerror.MakeSemanticError(
 				fmt.Sprintf("Variable '%s' already declared in this scope.", name.Lexeme))
 		}
-		scope[name.Lexeme] = &vInfo{status: vDeclared, isUsed: false, stmt: node}
+		scope = append(scope, vInfo{name: name.Lexeme, status: vDeclared, isUsed: false, stmt: node})
+		r.scopes[len(r.scopes)-1] = scope
+		return len(scope) - 1, nil
 	}
-	return nil
+	return -1, nil
 }
 
 func (r *Resolver) define(name token.Token, node ast.Node) {
 	if len(r.scopes) != 0 {
 		scope := r.scopes[len(r.scopes)-1]
-		scope[name.Lexeme].status = vDefined
+		index := scopeLookup(name.Lexeme, scope)
+		scope[index].status = vDefined
 	}
 }
