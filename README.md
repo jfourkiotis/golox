@@ -1,8 +1,8 @@
 ##The Lox interpreter written in Go.
 
 Current status: 
-*Chapter 11. Resolving and Binding*
-
+*Chapter 12. Classes*
+ 
 ###Extra features
 * `continue` 
 * `break`
@@ -10,4 +10,4 @@ Current status:
 * ternary operator (`?:`)
 * power operator (`**`, right associative)
 * uninitialized variable access is a runtime error
-* unused local variables and functions is an error
+* unused local variables, functions and classes is an error
