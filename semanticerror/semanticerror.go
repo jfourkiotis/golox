@@ -11,8 +11,8 @@ func Print(message string) {
 	HadError = true
 }
 
-// MakeSemanticError creates a new semantic error
-func MakeSemanticError(message string) error {
+// Make creates a new semantic error
+func Make(message string) error {
 	return fmt.Errorf("%s", message)
 }
 

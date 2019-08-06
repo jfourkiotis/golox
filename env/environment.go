@@ -57,14 +57,14 @@ func (e *Environment) Get(name token.Token, index int) (interface{}, error) {
 		v, prs := e.values[name.Lexeme]
 		if prs {
 			if v == needsInitialization {
-				return nil, fmt.Errorf("Uninitialized variable access: '%s'", name.Lexeme)
+				return nil, runtimeerror.Make(name, fmt.Sprintf("Uninitialized variable access: '%s'", name.Lexeme))
 			}
 			return v, nil
 		}
 		if e.enclosing != nil {
 			return e.enclosing.Get(name, index)
 		}
-		return nil, fmt.Errorf("Undefined variable '%v'", name.Lexeme)
+		return nil, runtimeerror.Make(name, fmt.Sprintf("Undefined variable '%v'", name.Lexeme))
 	}
 	return e.indexedValues[index], nil
 }
@@ -93,7 +93,7 @@ func (e *Environment) Assign(name token.Token, index int, value interface{}) err
 		if e.enclosing != nil {
 			return e.enclosing.Assign(name, index, value)
 		}
-		return runtimeerror.MakeRuntimeError(name, fmt.Sprintf("Undefined variable '%s'.", name.Lexeme))
+		return runtimeerror.Make(name, fmt.Sprintf("Undefined variable '%s'.", name.Lexeme))
 	}
 	e.indexedValues[index] = value
 	return nil

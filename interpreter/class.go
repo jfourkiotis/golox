@@ -58,7 +58,7 @@ func (c *ClassInstance) Get(name token.Token) (interface{}, error) {
 	if m, prs := c.Class.Methods[name.Lexeme]; prs {
 		return m.Bind(c), nil
 	}
-	return nil, runtimeerror.MakeRuntimeError(name, fmt.Sprintf("Undefined property '%s'", name.Lexeme))
+	return nil, runtimeerror.Make(name, fmt.Sprintf("Undefined property '%s'", name.Lexeme))
 }
 
 // Set accesses the property

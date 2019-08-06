@@ -12,8 +12,8 @@ func Print(message string) {
 	HadError = true
 }
 
-// MakeRuntimeError creates a new runtime error
-func MakeRuntimeError(token token.Token, message string) error {
+// Make creates a new runtime error
+func Make(token token.Token, message string) error {
 	return fmt.Errorf("%s\n[line %d]", message, token.Line)
 }
 

@@ -363,11 +363,11 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 		function, ok := callee.(Callable)
 
 		if !ok {
-			return nil, runtimeerror.MakeRuntimeError(n.Paren, "Can only call functions and classes.")
+			return nil, runtimeerror.Make(n.Paren, "Can only call functions and classes.")
 		}
 
 		if function.Arity() != len(args) {
-			return nil, runtimeerror.MakeRuntimeError(n.Paren, fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(args)))
+			return nil, runtimeerror.Make(n.Paren, fmt.Sprintf("Expected %d arguments but got %d.", function.Arity(), len(args)))
 		}
 
 		return function.Call(args)
@@ -413,7 +413,7 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 		if obj, ok := value.(*ClassInstance); ok {
 			return obj.Get(n.Name)
 		}
-		return nil, runtimeerror.MakeRuntimeError(n.Name, "Only instances have properties.")
+		return nil, runtimeerror.Make(n.Name, "Only instances have properties.")
 	case *ast.Set:
 		obj, err := Eval(n.Object, environment, res)
 		if err != nil {
@@ -426,7 +426,7 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 			}
 			return instance.Set(n.Name, value)
 		}
-		return nil, runtimeerror.MakeRuntimeError(n.Name, "Only instances have properties.")
+		return nil, runtimeerror.Make(n.Name, "Only instances have properties.")
 	case *ast.This:
 		if n.EnvDepth >= 0 {
 			return environment.GetAt(n.EnvDepth, n.Keyword, n.EnvIndex)

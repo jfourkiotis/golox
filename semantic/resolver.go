@@ -102,7 +102,7 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 			top := r.scopes[len(r.scopes)-1]
 			index := scopeLookup(n.Name.Lexeme, top)
 			if index >= 0 && top[index].status == vDeclared {
-				return semanticerror.MakeSemanticError("Cannot read local variable in its own initializer.")
+				return semanticerror.Make("Cannot read local variable in its own initializer.")
 			}
 		}
 		index, depth := r.resolveLocal(n, n.Name, res)
@@ -147,11 +147,11 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 		}
 	case *ast.Return:
 		if r.currentFunction == ftNone {
-			return semanticerror.MakeSemanticError("Cannot return from top-level code.")
+			return semanticerror.Make("Cannot return from top-level code.")
 		}
 		if n.Value != nil {
 			if r.currentFunction == ftInitializer {
-				return semanticerror.MakeSemanticError("Cannot return a value from an initializer.")
+				return semanticerror.Make("Cannot return a value from an initializer.")
 			}
 			if err := r.resolve(n.Value, res); err != nil {
 				return err
@@ -255,7 +255,7 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 		}
 	case *ast.This:
 		if r.currentClass == ctNone {
-			return semanticerror.MakeSemanticError("Cannot use 'this' outside of a class.")
+			return semanticerror.Make("Cannot use 'this' outside of a class.")
 		}
 		index, depth := r.resolveLocal(n, n.Keyword, res)
 		n.EnvIndex = index
@@ -334,7 +334,7 @@ func (r *Resolver) declare(name token.Token, node ast.Node) (int, error) {
 		scope := r.scopes[len(r.scopes)-1]
 		index := scopeLookup(name.Lexeme, scope)
 		if index >= 0 {
-			return 0, semanticerror.MakeSemanticError(
+			return 0, semanticerror.Make(
 				fmt.Sprintf("Variable '%s' already declared in this scope.", name.Lexeme))
 		}
 		scope = append(scope, vInfo{name: name.Lexeme, status: vDeclared, isUsed: false, stmt: node})

@@ -58,7 +58,7 @@ func run(src string, env *env.Environment) {
 	}
 	resolution, err := semantic.Resolve(statements)
 	if err != nil || semanticerror.HadError {
-		fmt.Println(err.Error())
+		semanticerror.Print(err.Error())
 		return
 	} else if len(resolution.Unused) != 0 {
 		for stmt := range resolution.Unused {
@@ -71,7 +71,7 @@ func run(src string, env *env.Environment) {
 				panic(fmt.Sprintf("Unexpected ast.Node type %T\n", stmt))
 			}
 		}
-		err = semanticerror.MakeSemanticError(fmt.Sprintf("%d unused local variables/functions found", len(resolution.Unused)))
+		err = semanticerror.Make(fmt.Sprintf("%d unused local variables/functions found", len(resolution.Unused)))
 		return
 	}
 	interpreter.Interpret(statements, env, resolution)
