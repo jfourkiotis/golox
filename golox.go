@@ -67,6 +67,8 @@ func run(src string, env *env.Environment) {
 				fmt.Fprintf(os.Stdout, "Unused variable %q [Line: %d]\n", n.Name.Lexeme, n.Name.Line)
 			case *ast.Function:
 				fmt.Fprintf(os.Stdout, "Unused function %q [Line: %d]\n", n.Name.Lexeme, n.Name.Line)
+			case *ast.Class:
+				fmt.Fprintf(os.Stdout, "Unused class %q [Line: %d]\n", n.Name.Lexeme, n.Name.Line)
 			default:
 				panic(fmt.Sprintf("Unexpected ast.Node type %T\n", stmt))
 			}

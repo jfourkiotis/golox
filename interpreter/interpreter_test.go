@@ -591,3 +591,15 @@ func TestVariableResolution(t *testing.T) {
 	`
 	testInterpreterOutput(input, "global\nglobal", t)
 }
+
+func TestClassInsideFunction(t *testing.T) {
+	input := `
+	fun hello() {
+		class world { blahblah(n) { return 2 + n; } }
+		return world().blahblah;
+	}
+	var cb = hello();
+	print cb(-2);
+	`
+	testInterpreterOutput(input, "0", t)
+}
