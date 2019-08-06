@@ -1,0 +1,9 @@
+class Fib {
+	find(n) {
+		if (n == 0 or n == 1) return n;
+		return this.find(n-2) + this.find(n-1);
+	}
+}
+
+var f = Fib();
+print f.find(33);
