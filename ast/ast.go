@@ -364,6 +364,11 @@ type Function struct {
 	EnvIndex int
 }
 
+// IsProperty is true if this function is a class property
+func (f *Function) IsProperty() bool {
+	return f.Params == nil
+}
+
 // String pretty prints the function
 func (f *Function) String() string {
 	var sb strings.Builder

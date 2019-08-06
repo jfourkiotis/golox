@@ -14,8 +14,9 @@ declaration -> classDecl
 			| stmt
 varDecl    -> "var" IDENTIFIER ( "=" expression )? ";" ;
 funDecl    -> "fun" function ;
-classDecl  -> "class" IDENTIFIER "{" function* "}" ;
+classDecl  -> "class" IDENTIFIER "{" (function|property)* "}" ;
 function   -> IDENTIFIER "(" parameters? ")" block ;
+property   -> IDENTIFIER block ;
 stmt       -> exprStmt
             | ifStmt
 			| printStmt
@@ -129,16 +130,8 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 	return &ast.Class{Name: name, Methods: methods}, nil
 }
 
-func (p *Parser) funDeclaration(kind string) (*ast.Function, error) {
-	oldInLoop := p.inloop
-	defer p.resetLoop(oldInLoop)
-	p.inloop = false
-	name, err := p.consume(token.IDENTIFIER, "Expected "+kind+" name.")
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = p.consume(token.LEFTPAREN, "Expected '(' after "+kind+" name.")
+func (p *Parser) methodArguments(kind string) ([]token.Token, error) {
+	_, err := p.consume(token.LEFTPAREN, "Expected '(' after "+kind+" name.")
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +156,24 @@ func (p *Parser) funDeclaration(kind string) (*ast.Function, error) {
 		}
 	}
 	_, err = p.consume(token.RIGHTPAREN, "Expected ')' after parameters.")
+	return parameters, err
+}
+
+func (p *Parser) funDeclaration(kind string) (*ast.Function, error) {
+	oldInLoop := p.inloop
+	defer p.resetLoop(oldInLoop)
+	p.inloop = false
+	name, err := p.consume(token.IDENTIFIER, "Expected "+kind+" name.")
 	if err != nil {
 		return nil, err
+	}
+
+	var parameters []token.Token = nil
+	if p.check(token.LEFTPAREN) {
+		parameters, err = p.methodArguments(kind)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	_, err = p.consume(token.LEFTBRACE, "Expected '{' before "+kind+" body.")

@@ -56,8 +56,11 @@ func NewUserFunction(def *ast.Function, closure *env.Environment, res semantic.R
 // Call executes a user-defined Lox function
 func (u *UserFunction) Call(arguments []interface{}) (interface{}, error) {
 	env := env.NewSized(u.Closure, u.envSize)
-	for i, param := range u.Definition.Params {
-		env.Define(param.Lexeme, arguments[i], i)
+
+	if !u.Definition.IsProperty() {
+		for i, param := range u.Definition.Params {
+			env.Define(param.Lexeme, arguments[i], i)
+		}
 	}
 
 	for _, stmt := range u.Definition.Body {
@@ -94,5 +97,5 @@ func (u *UserFunction) String() string {
 func (u *UserFunction) Bind(instance *ClassInstance) *UserFunction {
 	thisEnv := env.NewSized(u.Closure, 1)
 	thisEnv.Define("this", instance, 0)
-	return &UserFunction{Definition: u.Definition, Closure: thisEnv, Resolution: u.Resolution, envSize: u.envSize}
+	return &UserFunction{Definition: u.Definition, Closure: thisEnv, Resolution: u.Resolution, envSize: u.envSize, IsInitializer: u.IsInitializer}
 }

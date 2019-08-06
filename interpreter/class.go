@@ -56,6 +56,10 @@ func (c *ClassInstance) Get(name token.Token) (interface{}, error) {
 	}
 
 	if m, prs := c.Class.Methods[name.Lexeme]; prs {
+		newMethod := m.Bind(c)
+		if newMethod.Definition.IsProperty() {
+			return newMethod.Call(nil)
+		}
 		return m.Bind(c), nil
 	}
 	return nil, runtimeerror.Make(name, fmt.Sprintf("Undefined property '%s'", name.Lexeme))

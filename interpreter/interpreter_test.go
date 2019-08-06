@@ -603,3 +603,21 @@ func TestClassInsideFunction(t *testing.T) {
 	`
 	testInterpreterOutput(input, "0", t)
 }
+
+func TestClassProperties(t *testing.T) {
+	input := `
+	class Circle {
+		init(radius) {
+		  this.radius = radius;
+		}
+	  
+		area {
+		  return 3.141592653 * this.radius * this.radius;
+		}
+	  }
+	  
+	  var circle = Circle(4);
+	  print circle.area;
+	`
+	testInterpreterOutput(input, "50.265482448", t)
+}

@@ -286,11 +286,13 @@ func (r *Resolver) resolveFunction(function *ast.Function, res Resolution, ftype
 	r.pushScope()
 	defer r.popScope(function, res)
 
-	for _, param := range function.Params {
-		if _, err := r.declare(param, nil); err != nil {
-			return err
+	if !function.IsProperty() {
+		for _, param := range function.Params {
+			if _, err := r.declare(param, nil); err != nil {
+				return err
+			}
+			r.define(param, nil)
 		}
-		r.define(param, nil)
 	}
 	return r.resolveStatements(function.Body, res)
 }
