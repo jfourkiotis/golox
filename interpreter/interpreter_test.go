@@ -447,6 +447,114 @@ func TestEvalLogicalOperators(t *testing.T) {
 	}
 }
 
+func TestEvalClassDefinition(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{`
+		class Hello{}
+		print Hello;
+		`, "<class Hello>"},
+		{`
+		class Hello{}
+		var hello = Hello();
+		print hello;
+		`, "<class-instance Hello>"},
+	}
+
+	for _, test := range tests {
+		testInterpreterOutput(test.input, test.expectedOutput, t)
+	}
+}
+
+func TestEvalClassProperty(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{`
+		class Hello{}
+		var hello = Hello();
+		hello.x = 5.2;
+		print hello.x;
+		`, "5.2"},
+	}
+
+	for _, test := range tests {
+		testInterpreterOutput(test.input, test.expectedOutput, t)
+	}
+}
+
+func TestEvalThis(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{`
+		class Thing {
+			getCallback() {
+			  fun localFunction() {
+				print this;
+			  }
+		  
+			  return localFunction;
+			}
+		  }
+		  
+		  var callback = Thing().getCallback();
+		  callback();
+		`, "<class-instance Thing>"},
+	}
+
+	for _, test := range tests {
+		testInterpreterOutput(test.input, test.expectedOutput, t)
+	}
+}
+
+func TestEvalClassInit(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{`
+		class Thing {
+			init(a, b) {
+				this.x = a;
+				this.y = b;
+			}
+		}
+		print Thing(5, 1).x;
+		`, "5"},
+	}
+
+	for _, test := range tests {
+		testInterpreterOutput(test.input, test.expectedOutput, t)
+	}
+}
+
+func TestEvalClassInitReturn(t *testing.T) {
+	tests := []struct {
+		input          string
+		expectedOutput string
+	}{
+		{`
+		class Thing {
+			init(a, b) {
+				this.x = a;
+				this.y = b;
+				return;
+			}
+		}
+		print Thing(5, 1);
+		`, "<class-instance Thing>"},
+	}
+
+	for _, test := range tests {
+		testInterpreterOutput(test.input, test.expectedOutput, t)
+	}
+}
+
 func BenchmarkFib33(b *testing.B) {
 	input := `{
 		fun fib(n) {

@@ -51,20 +51,28 @@ func NewResolution() Resolution {
 // Resolve performs name resolution to the given statements
 func Resolve(statements []ast.Stmt) (Resolution, error) {
 	resolution := NewResolution()
-	resolver := &Resolver{scopes: make([]rScope, 0), currentFunction: ftNone}
+	resolver := &Resolver{scopes: make([]rScope, 0), currentFunction: ftNone, currentClass: ctNone}
 	err := resolver.resolveStatements(statements, resolution)
 	return resolution, err
 }
 
 const (
-	ftNone     = iota
-	ftFunction = iota
+	ftNone        = iota
+	ftFunction    = iota
+	ftMethod      = iota
+	ftInitializer = iota
+)
+
+const (
+	ctNone  = iota
+	ctClass = iota
 )
 
 // Resolver performs variable resolution on an AST
 type Resolver struct {
 	scopes          []rScope
 	currentFunction int
+	currentClass    int
 }
 
 func (r *Resolver) resolve(node ast.Node, res Resolution) error {
@@ -142,6 +150,9 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 			return semanticerror.MakeSemanticError("Cannot return from top-level code.")
 		}
 		if n.Value != nil {
+			if r.currentFunction == ftInitializer {
+				return semanticerror.MakeSemanticError("Cannot return a value from an initializer.")
+			}
 			if err := r.resolve(n.Value, res); err != nil {
 				return err
 			}
@@ -198,6 +209,57 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 		if err := r.resolve(n.Right, res); err != nil {
 			return err
 		}
+	case *ast.Class:
+		enclosingClass := r.currentClass
+		r.currentClass = ctClass
+
+		resetCurrentClass := func() {
+			r.currentClass = enclosingClass
+		}
+
+		defer resetCurrentClass()
+
+		index, err := r.declare(n.Name, n)
+		if err != nil {
+			return err
+		}
+		n.EnvIndex = index
+		r.define(n.Name, n)
+
+		r.pushScope()
+		defer r.popScope(n, res)
+
+		top := r.scopes[len(r.scopes)-1]
+		top = append(top, vInfo{name: "this", status: vDefined, isUsed: true})
+		r.scopes[len(r.scopes)-1] = top // FIXME: is this needed
+
+		for _, method := range n.Methods {
+			declaration := ftMethod
+			if method.Name.Lexeme == "init" {
+				declaration = ftInitializer
+			}
+			if err := r.resolveFunction(method, res, declaration); err != nil {
+				return err
+			}
+		}
+	case *ast.Get:
+		if err := r.resolve(n.Expression, res); err != nil {
+			return err
+		}
+	case *ast.Set:
+		if err := r.resolve(n.Value, res); err != nil {
+			return err
+		}
+		if err := r.resolve(n.Object, res); err != nil {
+			return err
+		}
+	case *ast.This:
+		if r.currentClass == ctNone {
+			return semanticerror.MakeSemanticError("Cannot use 'this' outside of a class.")
+		}
+		index, depth := r.resolveLocal(n, n.Keyword, res)
+		n.EnvIndex = index
+		n.EnvDepth = depth
 	}
 	return nil
 }

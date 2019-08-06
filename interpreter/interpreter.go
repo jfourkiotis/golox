@@ -389,6 +389,49 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 		return nil, breakError{}
 	case *ast.Continue:
 		return nil, continueError{}
+	case *ast.Class:
+		environment.Define(n.Name.Lexeme, nil, n.EnvIndex)
+
+		methods := make(map[string]*UserFunction)
+		for _, method := range n.Methods {
+			function := NewUserFunction(method, environment, res, method.EnvSize)
+			methods[method.Name.Lexeme] = function
+			if method.Name.Lexeme == "init" {
+				function.IsInitializer = true
+			}
+		}
+
+		klass := &Class{Name: n.Name.Lexeme, Methods: methods}
+		environment.Assign(n.Name, n.EnvIndex, klass)
+
+		return nil, nil
+	case *ast.Get:
+		value, err := Eval(n.Expression, environment, res)
+		if err != nil {
+			return nil, err
+		}
+		if obj, ok := value.(*ClassInstance); ok {
+			return obj.Get(n.Name)
+		}
+		return nil, runtimeerror.MakeRuntimeError(n.Name, "Only instances have properties.")
+	case *ast.Set:
+		obj, err := Eval(n.Object, environment, res)
+		if err != nil {
+			return nil, err
+		}
+		if instance, ok := obj.(*ClassInstance); ok {
+			value, err := Eval(n.Value, environment, res)
+			if err != nil {
+				return nil, err
+			}
+			return instance.Set(n.Name, value)
+		}
+		return nil, runtimeerror.MakeRuntimeError(n.Name, "Only instances have properties.")
+	case *ast.This:
+		if n.EnvDepth >= 0 {
+			return environment.GetAt(n.EnvDepth, n.Keyword, n.EnvIndex)
+		}
+		return GlobalEnv.Get(n.Keyword, n.EnvIndex)
 	}
 	panic("Fatal error")
 }

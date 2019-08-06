@@ -8,11 +8,13 @@ import (
 
 /*
 program    -> declaration* EOF ;
-declaration -> varDecl
+declaration -> classDecl
+            | varDecl
             | funDecl
 			| stmt
 varDecl    -> "var" IDENTIFIER ( "=" expression )? ";" ;
 funDecl    -> "fun" function ;
+classDecl  -> "class" IDENTIFIER "{" function* "}" ;
 function   -> IDENTIFIER "(" parameters? ")" block ;
 stmt       -> exprStmt
             | ifStmt
@@ -34,7 +36,7 @@ exprStmt   -> expression ";" ;
 printStmt  -> "print" expression ";" ;
 expression -> comma ;
 comma      -> assignment ( "," assignment ) * ;
-assignment -> IDENTIFIER "=" assignment
+assignment -> (call "." )? IDENTIFIER "=" assignment
 			| logic_or ;
 logic_or   -> logic_and ( "or" logic_and )* ;
 logic_and  -> ternary ( "and" ternary ) * ;
@@ -46,9 +48,9 @@ multiplication -> unary ( ( "/" | "*" ) unary )*;
 unary      -> ( "!" | "-" ) unary;
 			| power ;
 power      -> call ( "**" unary ) *
-call       -> primary ( "(" arguments? ")" )* ;
+call       -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 arguments  -> expression ( "," expression )* ;
-primary    -> NUMBER | STRING | "false" | "true" | "nil"
+primary    -> NUMBER | STRING | "false" | "true" | "nil" | "this"
 			| "(" expression ")"
 			| IDENTIFIER ;
 */
@@ -77,33 +79,57 @@ func (p *Parser) Parse() []ast.Stmt {
 }
 
 func (p *Parser) declaration() ast.Stmt {
-	if p.match(token.VAR) {
-		stmt, err := p.varDeclaration()
+	var stmt ast.Stmt
+	var err error
+
+	checkError := func() {
 		if err != nil {
 			p.synchronize()
 			parseerror.LogError(err)
-			return nil
+			stmt = nil
 		}
-		return stmt
-	} else if p.match(token.FUN) {
-		stmt, err := p.funDeclaration("function")
-		if err != nil {
-			p.synchronize()
-			parseerror.LogError(err)
-			return nil
-		}
-		return stmt
 	}
-	stmt, err := p.statement()
-	if err != nil {
-		p.synchronize()
-		parseerror.LogError(err)
-		return nil
+	defer checkError()
+
+	if p.match(token.CLASS) {
+		stmt, err = p.classDeclaration()
+	} else if p.match(token.VAR) {
+		stmt, err = p.varDeclaration()
+	} else if p.match(token.FUN) {
+		stmt, err = p.funDeclaration("function")
+	} else {
+		stmt, err = p.statement()
 	}
 	return stmt
 }
 
-func (p *Parser) funDeclaration(kind string) (ast.Stmt, error) {
+func (p *Parser) classDeclaration() (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "Expected class name.")
+	if err != nil {
+		return nil, err
+	}
+	_, err = p.consume(token.LEFTBRACE, "Expected '{' before class body.")
+	if err != nil {
+		return nil, err
+	}
+
+	methods := make([]*ast.Function, 0)
+	for !p.check(token.RIGHTBRACE) && !p.isAtEnd() {
+		fun, err := p.funDeclaration("method")
+		if err != nil {
+			return nil, err
+		}
+		methods = append(methods, fun)
+	}
+
+	_, err = p.consume(token.RIGHTBRACE, "Expected '}' after class body.")
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Class{Name: name, Methods: methods}, nil
+}
+
+func (p *Parser) funDeclaration(kind string) (*ast.Function, error) {
 	oldInLoop := p.inloop
 	defer p.resetLoop(oldInLoop)
 	p.inloop = false
@@ -418,6 +444,8 @@ func (p *Parser) assignment() (ast.Expr, error) {
 
 		if variable, ok := expr.(*ast.Variable); ok {
 			return &ast.Assign{Name: variable.Name, Value: value, EnvIndex: -1, EnvDepth: -1}, nil
+		} else if get, ok := expr.(*ast.Get); ok {
+			return &ast.Set{Object: get.Expression, Name: get.Name, Value: value}, nil
 		}
 		return nil, parseerror.MakeError(equals, "Invalid assignment target.")
 	}
@@ -596,6 +624,12 @@ func (p *Parser) call() (ast.Expr, error) {
 			if err != nil {
 				return nil, err
 			}
+		} else if p.match(token.DOT) {
+			name, err := p.consume(token.IDENTIFIER, "Expected property name after '.'")
+			if err != nil {
+				return nil, err
+			}
+			expr = &ast.Get{Expression: expr, Name: name}
 		} else {
 			break
 		}
@@ -637,6 +671,8 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.Literal{Value: nil}, nil
 	} else if p.match(token.NUMBER, token.STRING) {
 		return &ast.Literal{Value: p.previous().Literal}, nil
+	} else if p.match(token.THIS) {
+		return &ast.This{Keyword: p.previous(), EnvIndex: -1, EnvDepth: -1}, nil
 	} else if p.match(token.LEFTPAREN) {
 		expr, err := p.expression()
 		if err != nil {

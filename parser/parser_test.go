@@ -556,6 +556,106 @@ func TestParseLogicalOperators(t *testing.T) {
 
 }
 
+func TestParseEmptyClassStatement(t *testing.T) {
+	input := `class Hello{}`
+	expected := &ast.Class{
+		Name:    token.Token{Lexeme: "Hello"},
+		Methods: make([]*ast.Function, 0),
+	}
+	s := scanner.New(input)
+	tokens := s.ScanTokens()
+	p := New(tokens)
+	statements := p.Parse()
+
+	testExpectStatementsLen(statements, 1, t)
+	if statements[0].String() != expected.String() {
+		t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), expected.String())
+	}
+
+}
+
+func TestParseClassStatementWithMethods(t *testing.T) {
+	input := `class Hello{
+		say_hello() {
+			print "hello";
+		}
+	}`
+	expected := &ast.Class{
+		Name: token.Token{Lexeme: "Hello"},
+		Methods: []*ast.Function{
+			&ast.Function{
+				Name:   token.Token{Lexeme: "say_hello"},
+				Params: []token.Token{},
+				Body: []ast.Stmt{
+					&ast.Print{
+						Expression: &ast.Literal{
+							Value: "hello",
+						}}}}},
+	}
+	s := scanner.New(input)
+	tokens := s.ScanTokens()
+	p := New(tokens)
+	statements := p.Parse()
+
+	testExpectStatementsLen(statements, 1, t)
+	if statements[0].String() != expected.String() {
+		t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), expected.String())
+	}
+}
+
+func TestParseGet(t *testing.T) {
+	input :=
+		`
+		egg.scramble(3);
+	`
+	expected := &ast.Expression{
+		Expression: &ast.Call{
+			Callee: &ast.Get{
+				Expression: &ast.Variable{Name: token.Token{Lexeme: "egg"}},
+				Name:       token.Token{Lexeme: "scramble"},
+			},
+			Arguments: []ast.Expr{
+				&ast.Literal{Value: 3},
+			},
+		}}
+
+	s := scanner.New(input)
+	tokens := s.ScanTokens()
+	p := New(tokens)
+	statements := p.Parse()
+
+	testExpectStatementsLen(statements, 1, t)
+	if statements[0].String() != expected.String() {
+		t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), expected.String())
+	}
+}
+
+func TestParseSet(t *testing.T) {
+	input :=
+		`
+		breakfast.omelette.filling.meat = ham;
+	`
+	expected := &ast.Expression{
+		Expression: &ast.Set{
+			Name: token.Token{Lexeme: "meat"},
+			Object: &ast.Get{
+				Name: token.Token{Lexeme: "filling"},
+				Expression: &ast.Get{
+					Name:       token.Token{Lexeme: "omelette"},
+					Expression: &ast.Variable{Name: token.Token{Lexeme: "breakfast"}}}},
+			Value: &ast.Literal{Value: "ham"}}}
+
+	s := scanner.New(input)
+	tokens := s.ScanTokens()
+	p := New(tokens)
+	statements := p.Parse()
+
+	testExpectStatementsLen(statements, 1, t)
+	if statements[0].String() != expected.String() {
+		t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), expected.String())
+	}
+}
+
 func TestParseWhileStatement(t *testing.T) {
 	tests := []struct {
 		input       string
