@@ -226,6 +226,12 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 		n.EnvIndex = index
 		r.define(n.Name, n)
 
+		for _, classmethod := range n.ClassMethods {
+			if err := r.resolveFunction(classmethod, res, ftMethod); err != nil {
+				return err
+			}
+		}
+
 		r.pushScope()
 		defer r.popScope(n, res)
 

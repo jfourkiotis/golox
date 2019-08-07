@@ -6,15 +6,47 @@ import (
 	"golox/token"
 )
 
-// Class ...
-type Class struct {
-	Callable
-	Name    string
+// MetaClass ...
+type MetaClass struct {
 	Methods map[string]*UserFunction
 }
 
+// PropertyAccessor ...
+type PropertyAccessor interface {
+	Get(name token.Token) (interface{}, error)
+	Set(name token.Token, value interface{}) (interface{}, error)
+}
+
+// Class ...
+type Class struct {
+	Callable
+	PropertyAccessor
+	MetaClass *MetaClass
+	Name      string
+	Methods   map[string]*UserFunction
+	Fields    map[string]interface{}
+}
+
+// String ...
 func (c *Class) String() string {
 	return fmt.Sprintf("<class %s>", c.Name)
+}
+
+// Get ...
+func (c *Class) Get(name token.Token) (interface{}, error) {
+	if v, prs := c.Fields[name.Lexeme]; prs {
+		return v, nil
+	}
+	if m, prs := c.MetaClass.Methods[name.Lexeme]; prs {
+		return m, nil
+	}
+	return nil, runtimeerror.Make(name, fmt.Sprintf("Undefined property '%s'", name.Lexeme))
+}
+
+// Set accesses the property
+func (c *Class) Set(name token.Token, value interface{}) (interface{}, error) {
+	c.Fields[name.Lexeme] = value
+	return nil, nil
 }
 
 // Call is the operation that executes a class constructor
@@ -41,6 +73,7 @@ func (c *Class) Arity() int {
 
 // ClassInstance is a user defined class instance
 type ClassInstance struct {
+	PropertyAccessor
 	Class  *Class
 	fields map[string]interface{}
 }
