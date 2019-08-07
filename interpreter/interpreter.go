@@ -401,7 +401,14 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 			}
 		}
 
-		klass := &Class{Name: n.Name.Lexeme, Methods: methods}
+		classmethods := make(map[string]*UserFunction)
+		for _, classmethod := range n.ClassMethods {
+			function := NewUserFunction(classmethod, environment, res, classmethod.EnvSize)
+			classmethods[classmethod.Name.Lexeme] = function
+		}
+
+		metaClass := &MetaClass{Methods: classmethods}
+		klass := &Class{MetaClass: metaClass, Name: n.Name.Lexeme, Methods: methods, Fields: make(map[string]interface{})}
 		environment.Assign(n.Name, n.EnvIndex, klass)
 
 		return nil, nil
@@ -410,8 +417,8 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 		if err != nil {
 			return nil, err
 		}
-		if obj, ok := value.(*ClassInstance); ok {
-			return obj.Get(n.Name)
+		if accessor, ok := value.(PropertyAccessor); ok {
+			return accessor.Get(n.Name)
 		}
 		return nil, runtimeerror.Make(n.Name, "Only instances have properties.")
 	case *ast.Set:
@@ -419,12 +426,12 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 		if err != nil {
 			return nil, err
 		}
-		if instance, ok := obj.(*ClassInstance); ok {
+		if accessor, ok := obj.(PropertyAccessor); ok {
 			value, err := Eval(n.Value, environment, res)
 			if err != nil {
 				return nil, err
 			}
-			return instance.Set(n.Name, value)
+			return accessor.Set(n.Name, value)
 		}
 		return nil, runtimeerror.Make(n.Name, "Only instances have properties.")
 	case *ast.This:

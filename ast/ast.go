@@ -357,11 +357,12 @@ func (c *Call) String() string {
 
 // Function is the function definition node
 type Function struct {
-	Name     token.Token
-	Params   []token.Token
-	Body     []Stmt
-	EnvSize  int
-	EnvIndex int
+	Name          token.Token
+	Params        []token.Token
+	Body          []Stmt
+	EnvSize       int
+	EnvIndex      int
+	IsClassMethod bool
 }
 
 // IsProperty is true if this function is a class property
@@ -446,9 +447,10 @@ func (c *Continue) String() string {
 // Class node
 type Class struct {
 	Stmt
-	Name     token.Token
-	Methods  []*Function
-	EnvIndex int
+	Name         token.Token
+	Methods      []*Function
+	ClassMethods []*Function
+	EnvIndex     int
 }
 
 // String pretty prints the class
@@ -460,6 +462,11 @@ func (c *Class) String() string {
 	sb.WriteString(c.Name.Lexeme)
 	sb.WriteString("")
 	for _, f := range c.Methods {
+		sb.WriteString(f.String())
+		sb.WriteString(" ")
+	}
+	sb.WriteString("")
+	for _, f := range c.ClassMethods {
 		sb.WriteString(f.String())
 		sb.WriteString(" ")
 	}

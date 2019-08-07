@@ -15,7 +15,7 @@ declaration -> classDecl
 varDecl    -> "var" IDENTIFIER ( "=" expression )? ";" ;
 funDecl    -> "fun" function ;
 classDecl  -> "class" IDENTIFIER "{" (function|property)* "}" ;
-function   -> IDENTIFIER "(" parameters? ")" block ;
+function   -> "class"? IDENTIFIER "(" parameters? ")" block ;
 property   -> IDENTIFIER block ;
 stmt       -> exprStmt
             | ifStmt
@@ -115,19 +115,25 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 	}
 
 	methods := make([]*ast.Function, 0)
+	classmethods := make([]*ast.Function, 0)
 	for !p.check(token.RIGHTBRACE) && !p.isAtEnd() {
 		fun, err := p.funDeclaration("method")
 		if err != nil {
 			return nil, err
 		}
-		methods = append(methods, fun)
+		if !fun.IsClassMethod {
+			methods = append(methods, fun)
+		} else {
+			classmethods = append(classmethods, fun)
+		}
 	}
 
 	_, err = p.consume(token.RIGHTBRACE, "Expected '}' after class body.")
 	if err != nil {
 		return nil, err
 	}
-	return &ast.Class{Name: name, Methods: methods}, nil
+
+	return &ast.Class{Name: name, Methods: methods, ClassMethods: classmethods}, nil
 }
 
 func (p *Parser) methodArguments(kind string) ([]token.Token, error) {
@@ -163,12 +169,18 @@ func (p *Parser) funDeclaration(kind string) (*ast.Function, error) {
 	oldInLoop := p.inloop
 	defer p.resetLoop(oldInLoop)
 	p.inloop = false
+
+	isClassMethod := false
+	if p.match(token.CLASS) {
+		isClassMethod = true
+	}
+
 	name, err := p.consume(token.IDENTIFIER, "Expected "+kind+" name.")
 	if err != nil {
 		return nil, err
 	}
 
-	var parameters []token.Token = nil
+	var parameters []token.Token
 	if p.check(token.LEFTPAREN) {
 		parameters, err = p.methodArguments(kind)
 		if err != nil {
@@ -186,7 +198,7 @@ func (p *Parser) funDeclaration(kind string) (*ast.Function, error) {
 		return nil, err
 	}
 
-	return &ast.Function{Name: name, Params: parameters, Body: body, EnvIndex: -1}, nil
+	return &ast.Function{Name: name, Params: parameters, Body: body, EnvIndex: -1, IsClassMethod: isClassMethod}, nil
 }
 
 func (p *Parser) varDeclaration() (ast.Stmt, error) {

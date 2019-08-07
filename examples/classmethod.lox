@@ -1,0 +1,20 @@
+class Hello {
+	class foo(n) {
+		print n;
+	}
+
+	baz() {
+		Hello.foo(0);
+	}
+}
+
+Hello.foo(10);
+var h = Hello();
+h.baz();
+
+fun bar(n) {
+	print n + 1;
+}
+Hello.bar = bar;
+Hello.bar(10);
+
