@@ -61,6 +61,7 @@ const (
 	ftFunction    = iota
 	ftMethod      = iota
 	ftInitializer = iota
+	ftClassMethod = iota
 )
 
 const (
@@ -227,7 +228,7 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 		r.define(n.Name, n)
 
 		for _, classmethod := range n.ClassMethods {
-			if err := r.resolveFunction(classmethod, res, ftMethod); err != nil {
+			if err := r.resolveFunction(classmethod, res, ftClassMethod); err != nil {
 				return err
 			}
 		}
@@ -262,6 +263,8 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 	case *ast.This:
 		if r.currentClass == ctNone {
 			return semanticerror.Make("Cannot use 'this' outside of a class.")
+		} else if r.currentFunction != ftInitializer && r.currentFunction != ftMethod {
+			return semanticerror.Make("Cannot use 'this' outside instance initializers or methods.")
 		}
 		index, depth := r.resolveLocal(n, n.Keyword, res)
 		n.EnvIndex = index
