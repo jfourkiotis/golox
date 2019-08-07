@@ -12,4 +12,5 @@ Current status:
 * uninitialized variable access is a runtime error
 * unused local variables, functions and classes is an error
 * class properties
+* class methods
 
