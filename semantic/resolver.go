@@ -263,7 +263,7 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 	case *ast.This:
 		if r.currentClass == ctNone {
 			return semanticerror.Make("Cannot use 'this' outside of a class.")
-		} else if r.currentFunction != ftInitializer && r.currentFunction != ftMethod {
+		} else if r.currentFunction == ftClassMethod {
 			return semanticerror.Make("Cannot use 'this' outside instance initializers or methods.")
 		}
 		index, depth := r.resolveLocal(n, n.Keyword, res)
