@@ -117,9 +117,9 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 	methods := make([]*ast.Function, 0)
 	classmethods := make([]*ast.Function, 0)
 	for !p.check(token.RIGHTBRACE) && !p.isAtEnd() {
-		fun, err := p.funDeclaration("method")
-		if err != nil {
-			return nil, err
+		fun, err2 := p.funDeclaration("method")
+		if err2 != nil {
+			return nil, err2
 		}
 		if !fun.IsClassMethod {
 			methods = append(methods, fun)
@@ -149,9 +149,9 @@ func (p *Parser) methodArguments(kind string) ([]token.Token, error) {
 				return nil, parseerror.MakeError(p.peek(), "Cannot have more than 8 parameters.")
 			}
 
-			param, err := p.consume(token.IDENTIFIER, "Expected parameter name.")
-			if err != nil {
-				return nil, err
+			param, err2 := p.consume(token.IDENTIFIER, "Expected parameter name.")
+			if err2 != nil {
+				return nil, err2
 			}
 
 			parameters = append(parameters, param)
@@ -237,8 +237,8 @@ func (p *Parser) statement() (ast.Stmt, error) {
 	} else if p.match(token.CONTINUE) {
 		return p.continueStatement()
 	} else if p.match(token.LEFTBRACE) {
-		var err error
-		if statements, err := p.block(); err == nil {
+		statements, err := p.block()
+		if err == nil {
 			return &ast.Block{Statements: statements}, nil
 		}
 		return nil, err
@@ -351,25 +351,33 @@ func (p *Parser) whileStatement() (ast.Stmt, error) {
 }
 
 func (p *Parser) ifStatement() (ast.Stmt, error) {
-	var err error
 	if _, err := p.consume(token.LEFTPAREN, "Expected '(' after 'if'."); err != nil {
 		return nil, err
 	}
 
-	if condition, err := p.expression(); err == nil {
-		if _, err := p.consume(token.RIGHTPAREN, "Expected ')' after 'if' condition."); err == nil {
-			if thenBranch, err := p.statement(); err == nil {
-				if p.match(token.ELSE) {
-					if elseBranch, err := p.statement(); err == nil {
-						return &ast.If{Condition: condition, ThenBranch: thenBranch, ElseBranch: elseBranch}, nil
-					}
-				} else {
-					return &ast.If{Condition: condition, ThenBranch: thenBranch}, nil
-				}
-			}
-		}
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
 	}
-	return nil, err
+
+	_, err = p.consume(token.RIGHTPAREN, "Expected ')' after 'if' condition.")
+	if err != nil {
+		return nil, err
+	}
+
+	thenBranch, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(token.ELSE) {
+		elseBranch, err := p.statement()
+		if err != nil {
+			return nil, err
+		}
+		return &ast.If{Condition: condition, ThenBranch: thenBranch, ElseBranch: elseBranch}, nil
+	}
+	return &ast.If{Condition: condition, ThenBranch: thenBranch}, nil
 }
 
 func (p *Parser) block() ([]ast.Stmt, error) {
@@ -517,8 +525,8 @@ func (p *Parser) ternary() (ast.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		if _, err := p.consume(token.COLON, "Expected ':' in ternary operator."); err != nil {
-			return nil, err
+		if _, err2 := p.consume(token.COLON, "Expected ':' in ternary operator."); err2 != nil {
+			return nil, err2
 		}
 		colon := p.previous()
 		elseClause, err := p.expression()

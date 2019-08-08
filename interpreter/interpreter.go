@@ -234,14 +234,17 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 		}
 
 		if n.EnvDepth >= 0 {
-			if err := environment.AssignAt(n.EnvDepth, n.EnvIndex, n.Name, value); err == nil {
-				return value, nil
+			err2 := environment.AssignAt(n.EnvDepth, n.EnvIndex, n.Name, value)
+			if err2 != nil {
+				return nil, err2
 			}
-			return nil, err
-		} else if err := GlobalEnv.Assign(n.Name, n.EnvIndex, value); err == nil {
 			return value, nil
 		}
-		return nil, err
+		err = GlobalEnv.Assign(n.Name, n.EnvIndex, value)
+		if err != nil {
+			return nil, err
+		}
+		return value, nil
 	case *ast.Block:
 		newEnvironment := env.NewSized(environment, n.EnvSize)
 		for _, stmt := range n.Statements {
@@ -252,15 +255,17 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 		}
 		return nil, nil
 	case *ast.If:
-		var err error
-		if condValue, err := Eval(n.Condition, environment, res); err == nil {
-			if isTruthy(condValue) {
-				return Eval(n.ThenBranch, environment, res)
-			} else if n.ElseBranch != nil {
-				return Eval(n.ElseBranch, environment, res)
-			}
+		condValue, err := Eval(n.Condition, environment, res)
+		if err != nil {
+			return nil, err
 		}
-		return nil, err
+
+		if isTruthy(condValue) {
+			return Eval(n.ThenBranch, environment, res)
+		} else if n.ElseBranch != nil {
+			return Eval(n.ElseBranch, environment, res)
+		}
+		return nil, nil
 	case *ast.For:
 		if n.Initializer != nil {
 			_, err := Eval(n.Initializer, environment, res)
@@ -289,9 +294,9 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 					break
 				} else if _, ok := err.(continueError); ok {
 					if n.Increment != nil {
-						_, err := Eval(n.Increment, environment, res)
-						if err != nil {
-							return nil, err
+						_, err2 := Eval(n.Increment, environment, res)
+						if err2 != nil {
+							return nil, err2
 						}
 					}
 					continue
@@ -439,6 +444,8 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 			return environment.GetAt(n.EnvDepth, n.Keyword, n.EnvIndex)
 		}
 		return GlobalEnv.Get(n.Keyword, n.EnvIndex)
+	case nil:
+		return nil, runtimeerror.Make(token.Token{Lexeme: ""}, "Fatal interpreter error.")
 	}
 	panic("Fatal error")
 }
