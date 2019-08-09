@@ -1,8 +1,8 @@
-##The Lox interpreter written in Go.
+# The Lox interpreter written in Go.
 
-Current status:  Feature Complete.
+Current status:  _Feature Complete_.
  
-###Extra features
+### Extra features
 * `continue` 
 * `break`
 * comma operator (`,`)
