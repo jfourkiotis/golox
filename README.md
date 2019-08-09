@@ -1,7 +1,6 @@
 ##The Lox interpreter written in Go.
 
-Current status: 
-*Chapter 12. Classes*
+Current status:  Feature Complete.
  
 ###Extra features
 * `continue` 
