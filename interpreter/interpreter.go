@@ -395,7 +395,25 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 	case *ast.Continue:
 		return nil, continueError{}
 	case *ast.Class:
+
+		var superclass *Class
+		if n.SuperClass != nil {
+			sc, err := Eval(n.SuperClass, environment, res)
+			if err != nil {
+				return nil, err
+			} else if sup, ok := sc.(*Class); ok {
+				superclass = sup
+			} else {
+				return nil, runtimeerror.Make(n.SuperClass.Name, "Superclass must be a class.")
+			}
+		}
+
 		environment.Define(n.Name.Lexeme, nil, n.EnvIndex)
+
+		if superclass != nil {
+			environment = env.NewSized(environment, 1)
+			environment.Define("super", superclass, 0)
+		}
 
 		methods := make(map[string]*UserFunction)
 		for _, method := range n.Methods {
@@ -412,8 +430,12 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 			classmethods[classmethod.Name.Lexeme] = function
 		}
 
+		if superclass != nil {
+			environment = environment.Ancestor(1)
+		}
+
 		metaClass := &MetaClass{Methods: classmethods}
-		klass := &Class{MetaClass: metaClass, Name: n.Name.Lexeme, Methods: methods, Fields: make(map[string]interface{})}
+		klass := &Class{SuperClass: superclass, MetaClass: metaClass, Name: n.Name.Lexeme, Methods: methods, Fields: make(map[string]interface{})}
 		environment.Assign(n.Name, n.EnvIndex, klass)
 
 		return nil, nil
@@ -444,6 +466,27 @@ func Eval(node ast.Node, environment *env.Environment, res semantic.Resolution) 
 			return environment.GetAt(n.EnvDepth, n.Keyword, n.EnvIndex)
 		}
 		return GlobalEnv.Get(n.Keyword, n.EnvIndex)
+	case *ast.Super:
+		sc, err := environment.GetAt(n.EnvDepth, token.Token{Lexeme: "super"}, 0)
+		if err != nil {
+			return nil, err
+		}
+		if superclass, ok := sc.(*Class); ok {
+			tc, err2 := environment.GetAt(n.EnvDepth-1, token.Token{Lexeme: "this"}, 0)
+			if err2 != nil {
+				return nil, err2
+			}
+
+			if thisclass, ok2 := tc.(*ClassInstance); ok2 {
+				method, err3 := superclass.FindMethod(n.Method)
+				if err3 != nil {
+					return nil, err3
+				}
+				return method.Bind(thisclass), nil
+			}
+			panic("Fatal error: 'this' not a class instance ?")
+		}
+		panic("Fatal error: 'super' not a class instance ?")
 	case nil:
 		return nil, runtimeerror.Make(token.Token{Lexeme: ""}, "Fatal interpreter error.")
 	}

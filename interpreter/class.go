@@ -21,10 +21,21 @@ type PropertyAccessor interface {
 type Class struct {
 	Callable
 	PropertyAccessor
-	MetaClass *MetaClass
-	Name      string
-	Methods   map[string]*UserFunction
-	Fields    map[string]interface{}
+	MetaClass  *MetaClass
+	SuperClass *Class
+	Name       string
+	Methods    map[string]*UserFunction
+	Fields     map[string]interface{}
+}
+
+// FindMethod ...
+func (c *Class) FindMethod(name token.Token) (*UserFunction, error) {
+	if m, prs := c.Methods[name.Lexeme]; prs {
+		return m, nil
+	} else if c.SuperClass != nil {
+		return c.SuperClass.FindMethod(name)
+	}
+	return nil, runtimeerror.Make(name, fmt.Sprintf("Undefined property '%s'", name.Lexeme))
 }
 
 // String ...
@@ -88,14 +99,16 @@ func (c *ClassInstance) Get(name token.Token) (interface{}, error) {
 		return v, nil
 	}
 
-	if m, prs := c.Class.Methods[name.Lexeme]; prs {
-		newMethod := m.Bind(c)
-		if newMethod.Definition.IsProperty() {
-			return newMethod.Call(nil)
-		}
-		return m.Bind(c), nil
+	m, err := c.Class.FindMethod(name)
+	if err != nil {
+		return nil, err
 	}
-	return nil, runtimeerror.Make(name, fmt.Sprintf("Undefined property '%s'", name.Lexeme))
+
+	newMethod := m.Bind(c)
+	if newMethod.Definition.IsProperty() {
+		return newMethod.Call(nil)
+	}
+	return m.Bind(c), nil
 }
 
 // Set accesses the property

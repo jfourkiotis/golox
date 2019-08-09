@@ -571,7 +571,26 @@ func TestParseEmptyClassStatement(t *testing.T) {
 	if statements[0].String() != expected.String() {
 		t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), expected.String())
 	}
+}
 
+func TestParseSuper(t *testing.T) {
+	input := `super.foo();`
+	expected := &ast.Expression{
+		Expression: &ast.Call{
+			Callee:    &ast.Super{Keyword: token.Token{Lexeme: "super"}, Method: token.Token{Lexeme: "foo"}},
+			Paren:     token.Token{Lexeme: "("},
+			Arguments: nil},
+	}
+
+	s := scanner.New(input)
+	tokens := s.ScanTokens()
+	p := New(tokens)
+	statements := p.Parse()
+
+	testExpectStatementsLen(statements, 1, t)
+	if statements[0].String() != expected.String() {
+		t.Fatalf("\nExpected:\n%s\nGot:\n%s", statements[0].String(), expected.String())
+	}
 }
 
 func TestParseClassStatementWithMethods(t *testing.T) {

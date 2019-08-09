@@ -14,7 +14,7 @@ declaration -> classDecl
 			| stmt
 varDecl    -> "var" IDENTIFIER ( "=" expression )? ";" ;
 funDecl    -> "fun" function ;
-classDecl  -> "class" IDENTIFIER "{" (function|property)* "}" ;
+classDecl  -> "class" IDENTIFIER  ( "<" IDENTIFIER )? "{" (function|property)* "}" ;
 function   -> "class"? IDENTIFIER "(" parameters? ")" block ;
 property   -> IDENTIFIER block ;
 stmt       -> exprStmt
@@ -51,7 +51,7 @@ unary      -> ( "!" | "-" ) unary;
 power      -> call ( "**" unary ) *
 call       -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 arguments  -> expression ( "," expression )* ;
-primary    -> NUMBER | STRING | "false" | "true" | "nil" | "this"
+primary    -> NUMBER | STRING | "false" | "true" | "nil" | "this" | "super"
 			| "(" expression ")"
 			| IDENTIFIER ;
 */
@@ -109,6 +109,15 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var superclass *ast.Variable
+	if p.match(token.LESS) {
+		_, err = p.consume(token.IDENTIFIER, "Expected superclass name.")
+		if err != nil {
+			return nil, err
+		}
+		superclass = &ast.Variable{Name: p.previous()}
+	}
 	_, err = p.consume(token.LEFTBRACE, "Expected '{' before class body.")
 	if err != nil {
 		return nil, err
@@ -133,7 +142,7 @@ func (p *Parser) classDeclaration() (ast.Stmt, error) {
 		return nil, err
 	}
 
-	return &ast.Class{Name: name, Methods: methods, ClassMethods: classmethods}, nil
+	return &ast.Class{Name: name, Methods: methods, ClassMethods: classmethods, SuperClass: superclass}, nil
 }
 
 func (p *Parser) methodArguments(kind string) ([]token.Token, error) {
@@ -700,6 +709,17 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.Literal{Value: nil}, nil
 	} else if p.match(token.NUMBER, token.STRING) {
 		return &ast.Literal{Value: p.previous().Literal}, nil
+	} else if p.match(token.SUPER) {
+		keyword := p.previous()
+		_, err := p.consume(token.DOT, "Expected '.' after 'super'.")
+		if err != nil {
+			return nil, err
+		}
+		method, err := p.consume(token.IDENTIFIER, "Expected superclass method name.")
+		if err != nil {
+			return nil, err
+		}
+		return &ast.Super{Keyword: keyword, Method: method}, nil
 	} else if p.match(token.THIS) {
 		return &ast.This{Keyword: p.previous(), EnvIndex: -1, EnvDepth: -1}, nil
 	} else if p.match(token.LEFTPAREN) {

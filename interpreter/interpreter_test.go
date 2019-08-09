@@ -621,3 +621,37 @@ func TestClassProperties(t *testing.T) {
 	`
 	testInterpreterOutput(input, "50.265482448", t)
 }
+
+func TestInheritedMethod(t *testing.T) {
+	input := `
+	class Doughnut {
+		cook() {
+		  print "Fry until golden brown.";
+		}
+	  }
+	  
+	  class BostonCream < Doughnut {}
+	  
+	  BostonCream().cook();
+	`
+	testInterpreterOutput(input, "Fry until golden brown.", t)
+}
+
+func TestSuperClassMethod(t *testing.T) {
+	input := `
+	class Doughnut {
+		cook() {
+		  print "Fry until golden brown.";
+		}
+	  }
+	  
+	  class BostonCream < Doughnut {
+		cook() {
+		  super.cook();
+		}
+	  }
+	  
+	  BostonCream().cook();
+	`
+	testInterpreterOutput(input, "Fry until golden brown.", t)
+}

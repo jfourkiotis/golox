@@ -65,8 +65,9 @@ const (
 )
 
 const (
-	ctNone  = iota
-	ctClass = iota
+	ctNone     = iota
+	ctClass    = iota
+	ctSubClass = iota
 )
 
 // Resolver performs variable resolution on an AST
@@ -227,6 +228,24 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 		n.EnvIndex = index
 		r.define(n.Name, n)
 
+		if n.SuperClass != nil {
+			if n.Name.Lexeme == n.SuperClass.Name.Lexeme {
+				return semanticerror.Make("A class cannot inherit from itself.")
+			}
+			r.currentClass = ctSubClass
+			err = r.resolve(n.SuperClass, res)
+			if err != nil {
+				return err
+			}
+
+			r.pushScope()
+			defer r.popScope(n.SuperClass, res)
+
+			top := r.scopes[len(r.scopes)-1]
+			top = append(top, vInfo{name: "super", status: vDefined, isUsed: true})
+			r.scopes[len(r.scopes)-1] = top // FIXME: is this needed
+		}
+
 		for _, classmethod := range n.ClassMethods {
 			if err := r.resolveFunction(classmethod, res, ftClassMethod); err != nil {
 				return err
@@ -265,6 +284,15 @@ func (r *Resolver) resolve(node ast.Node, res Resolution) error {
 			return semanticerror.Make("Cannot use 'this' outside of a class.")
 		} else if r.currentFunction == ftClassMethod {
 			return semanticerror.Make("Cannot use 'this' outside instance initializers or methods.")
+		}
+		index, depth := r.resolveLocal(n, n.Keyword, res)
+		n.EnvIndex = index
+		n.EnvDepth = depth
+	case *ast.Super:
+		if r.currentClass == ctNone {
+			return semanticerror.Make("Cannot use 'super' outside of a class.")
+		} else if r.currentClass != ctSubClass {
+			return semanticerror.Make("Cannot use 'super' in a class with no superclass.")
 		}
 		index, depth := r.resolveLocal(n, n.Keyword, res)
 		n.EnvIndex = index

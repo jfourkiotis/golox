@@ -451,6 +451,7 @@ type Class struct {
 	Methods      []*Function
 	ClassMethods []*Function
 	EnvIndex     int
+	SuperClass   *Variable
 }
 
 // String pretty prints the class
@@ -525,13 +526,34 @@ type This struct {
 	EnvDepth int
 }
 
-// String pretty prints the setter
+// String pretty prints the 'this' node
 func (t *This) String() string {
 	var sb strings.Builder
 	sb.WriteString("(")
 	sb.WriteString("this")
 	sb.WriteString(" ")
 	sb.WriteString(t.Keyword.Lexeme)
+	sb.WriteString(" ")
+	sb.WriteString(")")
+	return sb.String()
+}
+
+// Super ...
+type Super struct {
+	Expr
+	Keyword  token.Token
+	Method   token.Token
+	EnvIndex int
+	EnvDepth int
+}
+
+// String pretty prints the 'super' node
+func (s *Super) String() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString("super")
+	sb.WriteString(" ")
+	sb.WriteString(s.Method.Lexeme)
 	sb.WriteString(" ")
 	sb.WriteString(")")
 	return sb.String()

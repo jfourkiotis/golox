@@ -102,3 +102,42 @@ func TestResolveThis(t *testing.T) {
 		}
 	}
 }
+
+func TestResolveSuper(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			`
+			class Foo {
+				cook {
+					super.cook();
+				}
+			}
+			`,
+			"Cannot use 'super' in a class with no superclass.",
+		},
+		{
+			`
+				super.notEvenInAClass();
+			`,
+			"Cannot use 'super' outside of a class.",
+		},
+	}
+
+	for _, test := range tests {
+		s := scanner.New(test.input)
+		tokens := s.ScanTokens()
+		p := parser.New(tokens)
+		statements := p.Parse()
+
+		_, err := Resolve(statements)
+		if err == nil {
+			t.Fatalf("Expected error.")
+		}
+		if err.Error() != test.expected {
+			t.Errorf("Expected error %q. Got %q", test.expected, err.Error())
+		}
+	}
+}
