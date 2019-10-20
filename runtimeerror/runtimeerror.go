@@ -2,8 +2,9 @@ package runtimeerror
 
 import (
 	"fmt"
-	"golox/token"
 	"os"
+
+	"github.com/dirkdev98/golox/token"
 )
 
 // Print reports a runtime error

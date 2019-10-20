@@ -1,0 +1,17 @@
+test_task:
+  container:
+    image: golang:latest
+  modules_cache:
+    fingerprint_script: cat go.sum
+    folder: $GOPATH/pkg/mod
+  get_script: go get ./...
+  test_script: go test ./...
+
+bench_task:
+  container:
+    image: golang:latest
+  modules_cache:
+    fingerprint_script: cat go.sum
+    folder: $GOPATH/pkg/mod
+  get_script: go get ./...
+  bench_script: go test -bench=. ./...

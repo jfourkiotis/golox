@@ -2,8 +2,9 @@ package ast
 
 import (
 	"fmt"
-	"golox/token"
 	"strings"
+
+	"github.com/dirkdev98/golox/token"
 )
 
 // Node is the root class of AST nodes

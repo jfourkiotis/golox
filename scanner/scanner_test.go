@@ -1,8 +1,9 @@
 package scanner
 
 import (
-	"golox/token"
 	"testing"
+
+	"github.com/dirkdev98/golox/token"
 )
 
 func TestScanTokens(t *testing.T) {

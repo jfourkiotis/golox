@@ -4,17 +4,18 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"golox/ast"
-	"golox/env"
-	"golox/interpreter"
-	"golox/parseerror"
-	"golox/parser"
-	"golox/runtimeerror"
-	"golox/scanner"
-	"golox/semantic"
-	"golox/semanticerror"
 	"io/ioutil"
 	"os"
+
+	"github.com/dirkdev98/golox/ast"
+	"github.com/dirkdev98/golox/env"
+	"github.com/dirkdev98/golox/interpreter"
+	"github.com/dirkdev98/golox/parseerror"
+	"github.com/dirkdev98/golox/parser"
+	"github.com/dirkdev98/golox/runtimeerror"
+	"github.com/dirkdev98/golox/scanner"
+	"github.com/dirkdev98/golox/semantic"
+	"github.com/dirkdev98/golox/semanticerror"
 )
 
 func check(err error) {

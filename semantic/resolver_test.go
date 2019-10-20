@@ -1,9 +1,10 @@
 package semantic
 
 import (
-	"golox/parser"
-	"golox/scanner"
 	"testing"
+
+	"github.com/dirkdev98/golox/parser"
+	"github.com/dirkdev98/golox/scanner"
 )
 
 func TestReturnResolution(t *testing.T) {

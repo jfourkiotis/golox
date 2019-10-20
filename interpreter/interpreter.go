@@ -2,14 +2,15 @@ package interpreter
 
 import (
 	"fmt"
-	"golox/ast"
-	"golox/env"
-	"golox/runtimeerror"
-	"golox/semantic"
-	"golox/token"
 	"io"
 	"math"
 	"os"
+
+	"github.com/dirkdev98/golox/ast"
+	"github.com/dirkdev98/golox/env"
+	"github.com/dirkdev98/golox/runtimeerror"
+	"github.com/dirkdev98/golox/semantic"
+	"github.com/dirkdev98/golox/token"
 )
 
 const (

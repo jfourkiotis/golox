@@ -1,10 +1,11 @@
 package parser
 
 import (
-	"golox/ast"
-	"golox/scanner"
-	"golox/token"
 	"testing"
+
+	"github.com/dirkdev98/golox/ast"
+	"github.com/dirkdev98/golox/scanner"
+	"github.com/dirkdev98/golox/token"
 )
 
 func testExpectStatementsLen(statements []ast.Stmt, length int, t *testing.T) {

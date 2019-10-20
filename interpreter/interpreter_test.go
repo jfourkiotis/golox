@@ -1,15 +1,16 @@
 package interpreter
 
 import (
-	"golox/ast"
-	"golox/env"
-	"golox/parser"
-	"golox/scanner"
-	"golox/semantic"
-	"golox/token"
 	"math"
 	"strings"
 	"testing"
+
+	"github.com/dirkdev98/golox/ast"
+	"github.com/dirkdev98/golox/env"
+	"github.com/dirkdev98/golox/parser"
+	"github.com/dirkdev98/golox/scanner"
+	"github.com/dirkdev98/golox/semantic"
+	"github.com/dirkdev98/golox/token"
 )
 
 func testExpectStatementsLen(statements []ast.Stmt, length int, t *testing.T) {

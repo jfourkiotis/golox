@@ -2,8 +2,9 @@ package parseerror
 
 import (
 	"fmt"
-	"golox/token"
 	"os"
+
+	"github.com/dirkdev98/golox/token"
 )
 
 // HadError is true if a scanner/parser error was encountered

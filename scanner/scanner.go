@@ -2,9 +2,10 @@ package scanner
 
 import (
 	"fmt"
-	"golox/parseerror"
-	"golox/token"
 	"strconv"
+
+	"github.com/dirkdev98/golox/parseerror"
+	"github.com/dirkdev98/golox/token"
 )
 
 var keywords = map[string]token.Type{

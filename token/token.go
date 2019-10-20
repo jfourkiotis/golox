@@ -58,7 +58,7 @@ const (
 	INVALID  = "__INVALID__"
 )
 
-//Token contains the lexeme read by the scanner
+// Token contains the lexeme read by the scanner
 type Token struct {
 	Type    Type
 	Lexeme  string

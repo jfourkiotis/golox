@@ -1,8 +1,9 @@
 package interpreter
 
 import (
-	"golox/env"
 	"time"
+
+	"github.com/dirkdev98/golox/env"
 )
 
 // GlobalEnv is the global environment
