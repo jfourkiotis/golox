@@ -1,2 +1,5 @@
 language: go
-script: env GO111MODULE=on go test golox...
+env: 
+  - GO111MODULE=on
+script:
+  - go test golox...
