@@ -13,3 +13,4 @@ Current status:  _Feature Complete_.
 * class properties
 * class methods
 
+[![Build Status](https://travis-ci.org/jfourkiotis/golox.svg?branch=master)](https://travis-ci.org/jfourkiotis/golox)
