@@ -3,8 +3,8 @@
 Current status:  _Feature Complete_.
  
 ### Extra features
-* `continue` 
-* `break`
+* `continue` statement
+* `break` statement
 * comma operator (`,`)
 * ternary operator (`?:`)
 * power operator (`**`, right associative)
