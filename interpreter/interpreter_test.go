@@ -1,12 +1,12 @@
 package interpreter
 
 import (
-	"golox/ast"
-	"golox/env"
-	"golox/parser"
-	"golox/scanner"
-	"golox/semantic"
-	"golox/token"
+	"github.com/jfourkiotis/golox/ast"
+	"github.com/jfourkiotis/golox/env"
+	"github.com/jfourkiotis/golox/parser"
+	"github.com/jfourkiotis/golox/scanner"
+	"github.com/jfourkiotis/golox/semantic"
+	"github.com/jfourkiotis/golox/token"
 	"math"
 	"strings"
 	"testing"

@@ -2,11 +2,11 @@ package interpreter
 
 import (
 	"fmt"
-	"golox/ast"
-	"golox/env"
-	"golox/runtimeerror"
-	"golox/semantic"
-	"golox/token"
+	"github.com/jfourkiotis/golox/ast"
+	"github.com/jfourkiotis/golox/env"
+	"github.com/jfourkiotis/golox/runtimeerror"
+	"github.com/jfourkiotis/golox/semantic"
+	"github.com/jfourkiotis/golox/token"
 	"io"
 	"math"
 	"os"

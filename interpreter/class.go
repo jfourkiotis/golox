@@ -2,8 +2,8 @@ package interpreter
 
 import (
 	"fmt"
-	"golox/runtimeerror"
-	"golox/token"
+	"github.com/jfourkiotis/golox/runtimeerror"
+	"github.com/jfourkiotis/golox/token"
 )
 
 // MetaClass ...

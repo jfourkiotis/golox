@@ -1,8 +1,8 @@
 package semantic
 
 import (
-	"golox/parser"
-	"golox/scanner"
+	"github.com/jfourkiotis/golox/parser"
+	"github.com/jfourkiotis/golox/scanner"
 	"testing"
 )
 

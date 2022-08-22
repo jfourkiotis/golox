@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"golox/ast"
-	"golox/scanner"
-	"golox/token"
+	"github.com/jfourkiotis/golox/ast"
+	"github.com/jfourkiotis/golox/scanner"
+	"github.com/jfourkiotis/golox/token"
 	"testing"
 )
 

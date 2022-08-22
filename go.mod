@@ -1,3 +1,3 @@
-module golox
+module github.com/jfourkiotis/golox
 
-go 1.13
+go 1.18

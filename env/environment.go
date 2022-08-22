@@ -2,8 +2,8 @@ package env
 
 import (
 	"fmt"
-	"golox/runtimeerror"
-	"golox/token"
+	"github.com/jfourkiotis/golox/runtimeerror"
+	"github.com/jfourkiotis/golox/token"
 )
 
 type uninitialized struct{}

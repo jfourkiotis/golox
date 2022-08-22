@@ -2,7 +2,7 @@ package ast
 
 import (
 	"fmt"
-	"golox/token"
+	"github.com/jfourkiotis/golox/token"
 	"strings"
 )
 

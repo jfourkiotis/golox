@@ -2,9 +2,9 @@ package semantic
 
 import (
 	"fmt"
-	"golox/ast"
-	"golox/semanticerror"
-	"golox/token"
+	"github.com/jfourkiotis/golox/ast"
+	"github.com/jfourkiotis/golox/semanticerror"
+	"github.com/jfourkiotis/golox/token"
 )
 
 // Unused local variables found by variable resolution

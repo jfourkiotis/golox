@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"golox/ast"
-	"golox/parseerror"
-	"golox/token"
+	"github.com/jfourkiotis/golox/ast"
+	"github.com/jfourkiotis/golox/parseerror"
+	"github.com/jfourkiotis/golox/token"
 )
 
 /*

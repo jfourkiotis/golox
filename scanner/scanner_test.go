@@ -1,7 +1,7 @@
 package scanner
 
 import (
-	"golox/token"
+	"github.com/jfourkiotis/golox/token"
 	"testing"
 )
 

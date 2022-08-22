@@ -2,10 +2,10 @@ package interpreter
 
 import (
 	"fmt"
-	"golox/ast"
-	"golox/env"
-	"golox/semantic"
-	"golox/token"
+	"github.com/jfourkiotis/golox/ast"
+	"github.com/jfourkiotis/golox/env"
+	"github.com/jfourkiotis/golox/semantic"
+	"github.com/jfourkiotis/golox/token"
 )
 
 type loxCallable func([]interface{}) (interface{}, error)

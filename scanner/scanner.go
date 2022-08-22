@@ -2,8 +2,8 @@ package scanner
 
 import (
 	"fmt"
-	"golox/parseerror"
-	"golox/token"
+	"github.com/jfourkiotis/golox/parseerror"
+	"github.com/jfourkiotis/golox/token"
 	"strconv"
 )
 

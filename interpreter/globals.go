@@ -1,7 +1,7 @@
 package interpreter
 
 import (
-	"golox/env"
+	"github.com/jfourkiotis/golox/env"
 	"time"
 )
 

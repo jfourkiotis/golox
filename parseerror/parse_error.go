@@ -2,7 +2,7 @@ package parseerror
 
 import (
 	"fmt"
-	"golox/token"
+	"github.com/jfourkiotis/golox/token"
 	"os"
 )
 
